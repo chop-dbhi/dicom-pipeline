@@ -1,0 +1,34 @@
+# Standard fair
+.DS_Store
+*~
+*.py?
+*.sw?
+*.egg-info
+*.egg
+*.sock
+dist
+sdist
+build
+pip-log.txt
+MANIFEST
+
+# Sass/Coffee
+.watch-pid
+.sass-cache
+
+# Ignore local settings file intended for environment-specific settings
+local_settings.py
+
+# Ignore optimized javascripts
+dicom_review/static/scripts/javascript/min
+
+# All Sass files will be compiled into this directory
+dicom_review/static/stylesheets/css/*.css
+!dicom_review/static/stylesheets/img
+
+# Collected static files via Django's staticfiles app
+_site/static
+
+# Do not version user uploaded content since these files might be huge.
+# Have another strategy for backing up this content.
+_site/media
