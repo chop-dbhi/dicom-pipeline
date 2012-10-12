@@ -1,6 +1,9 @@
 # DICOM Anonymization Pipeline
 
-This is a pipeline meant to perfom the following step son on DICOM studies reviewed with [django-dicom-review](https://github.com/cbmi/django-dicom-review)
+
+## What is the DICOM Anonymization pipeline
+
+This is a software pipeline meant to perfom the following steps on on DICOM studies after they have beenreviewed with [django-dicom-review](https://github.com/cbmi/django-dicom-review)
 
 1. Pull the studies from a staging (identified) PACS
 1. Anonymize the studies
@@ -8,6 +11,12 @@ This is a pipeline meant to perfom the following step son on DICOM studies revie
 1. Push the studies to a research PACS
 
 The pipeline records information about each step using log files in a time stamped directory (more details to follow). It is capable of restarting a run from a failed step.
+
+
+<center>
+<img src="https://raw.github.com/cbmi/dicom-pipeline/master/pipeline-flowchart.png"/>
+</center>
+
 
 ## Caveats
 1. The integration step described above will be highly variable and depend on your task and environment. Currently this step is performed in the function add_studies with the loadstudies.py file. There are plans to make this portion easier to extend, but for now if you need to integrate with an existing database you will need look at the example provided (which is completely dependent on our applications and database schemas) and re-implement the function. 
