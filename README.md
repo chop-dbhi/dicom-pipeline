@@ -3,7 +3,7 @@
 
 ## What is the DICOM Anonymization pipeline
 
-This is a software pipeline meant to perfom the following steps on on DICOM studies after they have beenreviewed with [django-dicom-review](https://github.com/cbmi/django-dicom-review)
+This is a software pipeline meant to perfom the following steps on on DICOM studies after they have been reviewed with [django-dicom-review](https://github.com/cbmi/django-dicom-review)
 
 1. Pull the studies from a staging (identified) PACS
 1. Anonymize the studies
