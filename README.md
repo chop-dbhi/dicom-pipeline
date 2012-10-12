@@ -1,6 +1,6 @@
 # DICOM Anonymization Pipeline
 
-This is a pipeline meant to perfom the following stepson on DICOM studies reviewed with [django-dicom-review](https://github.com/cbmi/django-dicom-review)
+This is a pipeline meant to perfom the following step son on DICOM studies reviewed with [django-dicom-review](https://github.com/cbmi/django-dicom-review)
 
 1. Pull the studies from a staging (identified) PACS
 1. Anonymize the studies
