@@ -56,8 +56,11 @@ def dicom_count(directory):
 
    for root, dirs, files in os.walk(directory):
       for filename in files:
+          try: 
+              ds = dicom.read_file(os.path.join(root,filename))
+          except IOError:
+              continue
           file_count += 1
-          ds = dicom.read_file(os.path.join(root,filename))
           study_uid = ds[0x20,0xD].value.strip()
           studies.add(study_uid)
    
