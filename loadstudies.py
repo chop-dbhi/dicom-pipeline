@@ -56,7 +56,16 @@ def scan_dicom_files(options):
     
     for root, dirs, files in os.walk(options.directory):
         for filename in files:
-            ds = dicom.read_file(os.path.join(root,filename))
+            try:
+                ds = dicom.read_file(os.path.join(root,filename))
+            except IOError, e0:
+                logger.error("Error reading file %s, it will be moved to %s" % (os.path.join(root,filename), options.faildir ))
+                try:
+                    shutil.move(os.path.join(root,filename), options.faildir)
+                except IOError, e1:
+                    logger.error("Error moving file %s" % os.path.join(root,filename))
+                    sys.exit()
+                continue
             study_uid = ds[0x20,0xD].value.strip()
             details = cache.setdefault(study_uid,{'manufactured':False, "series":[], "num_series":0, "num_images":0, "accession":[]})
             series = ds[0x20,0x0E].value.strip()
