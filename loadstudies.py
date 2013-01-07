@@ -267,14 +267,20 @@ def add_studies(options, cache):
     
 
 
-def move_failed_studies(valid, directory, faildir):
-    for root, dirs, files in os.walk(directory):
-       for filename in files:
-           ds = dicom.read_file(os.path.join(root,filename))
-           study_uid = ds[0x20,0xD].value.strip()
-           if not study_uid in valid:
-               shutil.move(os.path.join(root,filename),faildir)
+    def move_failed_studies(valid, directory, faildir):
+        for root, dirs, files in os.walk(directory):  
+           for filename in files:
+               try:
+                    ds = dicom.read_file(os.path.join(root, filename))
+                    study_uid = ds[0x20,0xD].value.strip() 
+               except IOError, e0:
+                    study_uid = "<unable to read>"
 
+               if study_uid == "<unable to read>" or not study_uid in valid:
+                   try:
+                      shutil.move(os.path.join(root,filename), faildir)
+                   except IOError, e1:
+                      print "Unable to move file %s with study_uid %s. Trying to move because it failed to be reconciled with a patient or an error occurred while reading the file." % (filename, study_uid)
 
 
 def main():
