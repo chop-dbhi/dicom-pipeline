@@ -66,10 +66,21 @@ def scan_dicom_files(options):
                     logger.error("Error moving file %s" % os.path.join(root,filename))
                     sys.exit()
                 continue
-            study_uid = ds[0x20,0xD].value.strip()
+
+            try:
+                 study_uid = ds[0x20,0xD].value.strip()
+                 series = ds[0x20,0x0E].value.strip()
+            except IndexError, ie0:
+                logger.error("Error reading file %s. Could not read study or series id. It will be moved to %s" % (os.path.join(root,filename), options.faildir ))
+                try:
+                    shutil.move(os.path.join(root,filename), options.faildir)
+                except IOError, e1:
+                    logger.error("Error moving file %s" % os.path.join(root,filename))
+                    sys.exit()
+                continue
+
             details = cache.setdefault(study_uid,{'manufactured':False, "series":[], "num_series":0, "num_images":0, "accession":[]})
-            series = ds[0x20,0x0E].value.strip()
-            
+
             # Get the original accesion number
             accession_cleaned = ds[0x8,0x50].value.strip()
             rows = cursor.execute("select original from %s where cleaned=?" % 
