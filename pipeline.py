@@ -17,6 +17,7 @@ overview = None
 run_re = re.compile(r'run_at_(\d+)')
 run_dir = os.path.sep.join(['data',"run_at_%d" % int(time.time())])
 limit = 0
+modalities = None
 
 if __name__ == "__main__":
     parser = OptionParser()
@@ -28,6 +29,8 @@ if __name__ == "__main__":
             help="Don't modify de-identified studies to include patient aliases, modify the application database, or push to production")
     parser.add_option("-v", "--verbosity", default = 5, dest = "verbosity", action = "store",
             help="Specify pipeline versbosity, 1-10. See Ruffus documentation for details.")
+    parser.add_option("-a", "--allowed_modalities", default = "MR,CT", dest = "modalities", action = "store",
+            help="Comma separated list of allowed modality types. Defaults to 'MR,CT'")
     (options, args) = parser.parse_args()
 
     try:
@@ -35,6 +38,7 @@ if __name__ == "__main__":
     except ValueError:
         print "Max argument must be a number"
         sys.exit()
+    modalities = options.modalities
 
     if options.runlast:
         if os.path.exists("data"):
@@ -121,7 +125,8 @@ def anonymize(input_file = None, output_file = None):
     results = subprocess.check_output("./anonymize.sh %s %s %s %s" % (DICOM_ROOT,
         os.path.sep.join([run_dir, "from_staging"]),
         os.path.sep.join([run_dir, "to_production"]),
-        os.path.sep.join([run_dir, "quarantine"])), shell=True)
+        os.path.sep.join([run_dir, "quarantine"]),
+        modalities), shell=True)
 
     f = open(os.path.sep.join([run_dir, "anonymize_output.txt"]), "w")
     f.write(results)
