@@ -8,7 +8,13 @@ import datetime
 
 from optparse import OptionParser
 from ruffus import *
+
+import local_settings as local
 from local_settings import *
+
+from django.core.management import setup_environ
+setup_environ(local)
+
 from dicom_models.staging.models import *
 
 devnull = None
