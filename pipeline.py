@@ -93,7 +93,7 @@ def get_reviewed_studies(input_file, output_file):
         radiologystudyreview__relevant = True,
         radiologystudyreview__has_reconstruction = False,
         exclude = False,
-        image_published = False).distinct()[0:limit-1]
+        image_published = False).distinct()[0:limit]
     f = open(output_file, "w")
     for study in studies:
         f.write(study.original_study_uid+"\n")
