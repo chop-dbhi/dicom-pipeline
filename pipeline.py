@@ -90,10 +90,10 @@ def setup_data_dir():
 def get_reviewed_studies(input_file, output_file):
     #TODO Check here for conflicting reviews if more than 1 review is permitted
     studies = RadiologyStudy.objects.filter(radiologystudyreview__has_phi = False,
-        radiologystudyreview__exclude = False,  
-        radiologystudyreview__relevant = True, 
+        radiologystudyreview__relevant = True,
         radiologystudyreview__has_reconstruction = False,
-        radiologystudyreview__image_published = False).distinct()[0:limit-1]
+        exclude = False,
+        image_published = False).distinct()[0:limit-1]
     f = open(output_file, "w")
     for study in studies:
         f.write(study.original_study_uid+"\n")
