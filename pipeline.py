@@ -146,7 +146,7 @@ def anonymize(input_file = None, output_file = None):
 def check_patient_protocol(input_file = None, output_file = None):
     file_name = os.path.sep.join([run_dir, "studies_to_retrieve.txt"])
     studies_file = open(file_name, "r")
-    studies = f.read().splitlines()
+    studies = studies_file.read().splitlines()
     studies_file.close()
 
     protocol_studies = RadiologyStudy.objects.filter(original_study_uid__in=studies,
