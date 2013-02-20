@@ -148,7 +148,7 @@ def check_patient_protocol(input_file = None, output_file = None):
     studies_file = open(file_name, "r")
     studies = studies_file.read().splitlines()
     studies_file.close()
-
+ 
     protocol_studies = RadiologyStudy.objects.filter(original_study_uid__in=studies,
         radiologystudyreview__has_phi = False,
         radiologystudyreview__relevant = True,
@@ -158,8 +158,9 @@ def check_patient_protocol(input_file = None, output_file = None):
 
     reviewed_protocol_studies = set([x.original_study_uid for x in protocol_studies])
 
+    quarantine_dir = os.path.sep.join([run_dir, "quarantine"])
     found_protocol_series = set()
-    for root, dirs, files in os.path.sep.join([run_dir, "quarantine"]):
+    for root, dirs, files in os.walk(quarantine_dir):
         for filename in files:
             try:
                 ds = dicom.read_file(os.path.join(root,filename))
