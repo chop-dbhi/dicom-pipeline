@@ -159,7 +159,7 @@ def check_patient_protocol(input_file = None, output_file = None):
     reviewed_protocol_studies = set([x.original_study_uid for x in protocol_studies])
 
     quarantine_dir = os.path.sep.join([run_dir, "quarantine"])
-    found_protocol_series = set()
+    found_protocol_studies = set()
     for root, dirs, files in os.walk(quarantine_dir):
         for filename in files:
             try:
@@ -170,7 +170,7 @@ def check_patient_protocol(input_file = None, output_file = None):
             series_desc = ds[0x8,0x103E].value.strip().lower()
             if series_desc == "patient protocol":
                 study_uid = ds[0x20,0xD].value.strip()
-                found_protocol_series.add(study_uid)
+                found_protocol_studies.add(study_uid)
 
     marked_but_not_found = reviewed_protocol_studies - found_protocol_series
 
