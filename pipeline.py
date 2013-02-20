@@ -37,6 +37,8 @@ if __name__ == "__main__":
             help="Specify pipeline versbosity, 1-10. See Ruffus documentation for details.")
     parser.add_option("-a", "--allowed_modalities", default = "MR,CT", dest = "modalities", action = "store",
             help="Comma separated list of allowed modality types. Defaults to 'MR,CT'")
+    parser.add_option("-n", "--no_push", default = False, dest = "no_push", action = "store_true",
+            help="Do not push studies to production PACS (stops after registering studies with encounter in database).")
     (options, args) = parser.parse_args()
 
     try:
@@ -69,6 +71,7 @@ def dicom_count(directory):
           try: 
               ds = dicom.read_file(os.path.join(root,filename))
           except IOError:
+              sys.stderr.write("Unable to read %s" % os.path.join(root, filename))
               continue
           file_count += 1
           study_uid = ds[0x20,0xD].value.strip()
@@ -138,8 +141,58 @@ def anonymize(input_file = None, output_file = None):
     f.write(results)
     f.close()
 
-@files(os.path.sep.join([run_dir, "anonymize_output.txt"]), os.path.sep.join([run_dir, "register_output.txt"]))
+@files(os.path.sep.join([run_dir, "anonymize_output.txt"]), os.path.sep.join([run_dir, "reviewed_protocol_series.txt"]))
 @follows(anonymize)
+def check_patient_protocol(input_file = None, output_file = None):
+    file_name = os.path.sep.join([run_dir, "studies_to_retrieve.txt"])
+    studies_file = open(file_name, "r")
+    studies = f.read().splitlines()
+    studies_file.close()
+
+    protocol_studies = RadiologyStudy.objects.filter(original_study_uid__in=studies,
+        radiologystudyreview__has_phi = False,
+        radiologystudyreview__relevant = True,
+        radiologystudyreview__has_reconstruction = False,
+        exclude = False,
+        radiologystudyreview__has_protocol_series = True).distinct()
+
+    reviewed_protocol_studies = set([x.original_study_uid for x in protocol_studies])
+
+    found_protocol_series = set()
+    for root, dirs, files in os.path.sep.join([run_dir, "quarantine"]):
+        for filename in files:
+            try:
+                ds = dicom.read_file(os.path.join(root,filename))
+            except IOError:
+                sys.stderr.write("Unable to read %s" % os.path.join(root, filename))
+                continue
+            series_desc = ds[0x8,0x103E].value.strip().lower()
+            if series_desc == "patient protocol":
+                study_uid = ds[0x20,0xD].value.strip()
+                found_protocol_series.add(study_uid)
+
+    marked_but_not_found = reviewed_protocol_studies - found_protocol_series
+
+    overview.write("%d studies marked as having a protocol series, %d files found with protocol series during anonymization.\n" % (len(reviewed_protocol_studies), len(found_protocol_series)))
+    overview.write("%d studies marked as having a protocol series but not found, see 'missing_protocol_studies.txt'.\n" % len(marked_but_not_found))
+
+    f = open(os.path.sep.join([run_dir, "reviewed_protocol_series.txt"]), "w")
+    for study in reviewed_protocol_studies:
+        f.write(study+"\n")
+    f.close()
+
+    f = open(os.path.sep.join([run_dir, "found_protocol_series.txt"]), "w")
+    for study in found_protocol_studies:
+        f.write(study+"\n")
+    f.close()
+
+    f = open(os.path.sep.join([run_dir, "missing_protocol_series.txt"]), "w")
+    for study in marked_but_not_found:
+        f.write(study+"\n")
+    f.close()
+
+@files(os.path.sep.join([run_dir, "reviewed_protocol_series.txt"]), os.path.sep.join([run_dir, "register_output.txt"]))
+@follows(check_patient_protocol)
 def register_with_database(input_file = None, output_file = None):
     additional = ""
     if options.practice:
@@ -167,7 +220,11 @@ def push_to_production(input_file = None, output_file = None):
     overview.write("Push completed at %s\n" % now.strftime("%Y-%m-%d %H:%M"))
 
 def main():
-    pipeline_run([push_to_production], verbose = options.verbosity)
+    if options.no_push:
+        pipeline_run([register_with_database], verbose = options.verbosity)
+    else:
+        pipeline_run([push_to_production], verbose = options.verbosity)
+
     if overview: 
         overview.close()
 
