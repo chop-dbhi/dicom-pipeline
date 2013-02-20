@@ -221,7 +221,7 @@ def push_to_production(input_file = None, output_file = None):
     overview.write("Push completed at %s\n" % now.strftime("%Y-%m-%d %H:%M"))
 
 def main():
-    if options.no_push:
+    if options.no_push or options.practice:
         pipeline_run([register_with_database], verbose = options.verbosity)
     else:
         pipeline_run([push_to_production], verbose = options.verbosity)
