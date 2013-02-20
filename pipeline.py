@@ -131,7 +131,7 @@ def stop_dicom_server():
 @files(os.path.sep.join([run_dir, "pull_output.txt"]), os.path.sep.join([run_dir, "anonymize_output.txt"]))
 @follows(stop_dicom_server)
 def anonymize(input_file = None, output_file = None):
-    results = subprocess.check_output("./anonymize.sh %s %s %s %s" % (DICOM_ROOT,
+    results = subprocess.check_output("./anonymize.sh %s %s %s %s %s" % (DICOM_ROOT,
         os.path.sep.join([run_dir, "from_staging"]),
         os.path.sep.join([run_dir, "to_production"]),
         os.path.sep.join([run_dir, "quarantine"]),
