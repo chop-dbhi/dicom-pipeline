@@ -141,7 +141,7 @@ def anonymize(input_file = None, output_file = None):
     f.write(results)
     f.close()
 
-@files(os.path.sep.join([run_dir, "anonymize_output.txt"]), os.path.sep.join([run_dir, "missing_protocol_series.txt"]))
+@files(os.path.sep.join([run_dir, "anonymize_output.txt"]), os.path.sep.join([run_dir, "missing_protocol_studies.txt"]))
 @follows(anonymize)
 def check_patient_protocol(input_file = None, output_file = None):
     file_name = os.path.sep.join([run_dir, "studies_to_retrieve.txt"])
@@ -174,25 +174,25 @@ def check_patient_protocol(input_file = None, output_file = None):
 
     marked_but_not_found = reviewed_protocol_studies - found_protocol_studies
 
-    overview.write("%d studies marked as having a protocol series, %d files found with protocol series during anonymization.\n" % (len(reviewed_protocol_studies), len(found_protocol_series)))
+    overview.write("%d studies marked as having a protocol series, %d files found with protocol series during anonymization.\n" % (len(reviewed_protocol_studies), len(found_protocol_studies)))
     overview.write("%d studies marked as having a protocol series but not found, see 'missing_protocol_studies.txt'.\n" % len(marked_but_not_found))
 
-    f = open(os.path.sep.join([run_dir, "reviewed_protocol_series.txt"]), "w")
+    f = open(os.path.sep.join([run_dir, "reviewed_protocol_studies.txt"]), "w")
     for study in reviewed_protocol_studies:
         f.write(study+"\n")
     f.close()
 
-    f = open(os.path.sep.join([run_dir, "found_protocol_series.txt"]), "w")
+    f = open(os.path.sep.join([run_dir, "found_protocol_studies.txt"]), "w")
     for study in found_protocol_studies:
         f.write(study+"\n")
     f.close()
 
-    f = open(os.path.sep.join([run_dir, "missing_protocol_series.txt"]), "w")
+    f = open(os.path.sep.join([run_dir, "missing_protocol_studies.txt"]), "w")
     for study in marked_but_not_found:
         f.write(study+"\n")
     f.close()
 
-@files(os.path.sep.join([run_dir, "reviewed_protocol_series.txt"]), os.path.sep.join([run_dir, "register_output.txt"]))
+@files(os.path.sep.join([run_dir, "missing_protocol_studies.txt"]), os.path.sep.join([run_dir, "register_output.txt"]))
 @follows(check_patient_protocol)
 def register_with_database(input_file = None, output_file = None):
     additional = ""
