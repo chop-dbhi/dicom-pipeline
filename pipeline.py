@@ -141,7 +141,7 @@ def anonymize(input_file = None, output_file = None):
     f.write(results)
     f.close()
 
-@files(os.path.sep.join([run_dir, "anonymize_output.txt"]), os.path.sep.join([run_dir, "reviewed_protocol_series.txt"]))
+@files(os.path.sep.join([run_dir, "anonymize_output.txt"]), os.path.sep.join([run_dir, "missing_protocol_series.txt"]))
 @follows(anonymize)
 def check_patient_protocol(input_file = None, output_file = None):
     file_name = os.path.sep.join([run_dir, "studies_to_retrieve.txt"])
@@ -172,7 +172,7 @@ def check_patient_protocol(input_file = None, output_file = None):
                 study_uid = ds[0x20,0xD].value.strip()
                 found_protocol_studies.add(study_uid)
 
-    marked_but_not_found = reviewed_protocol_studies - found_protocol_series
+    marked_but_not_found = reviewed_protocol_studies - found_protocol_studies
 
     overview.write("%d studies marked as having a protocol series, %d files found with protocol series during anonymization.\n" % (len(reviewed_protocol_studies), len(found_protocol_series)))
     overview.write("%d studies marked as having a protocol series but not found, see 'missing_protocol_studies.txt'.\n" % len(marked_but_not_found))
