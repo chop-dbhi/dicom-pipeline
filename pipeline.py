@@ -98,7 +98,7 @@ def get_reviewed_studies(input_file, output_file):
         exclude = False,
         image_published = False).distinct()[0:limit]
 
-    comments = open("comments.txt", "w")
+    comments = open(os.path.sep.join([run_dir, "comments.txt"]), "w")
     for study in studies:
         comments.write("%s:\n" % study.original_study_uid)
         for review in study.radiologystudyreview_set.all():
