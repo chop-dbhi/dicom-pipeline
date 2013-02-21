@@ -166,13 +166,14 @@ def scan_dicom_files(options):
                 # Update the dicom file
                 ds[0x10,0x10].value=details["patient_alias"]
                 ds[0x10,0x20].value=details["patient_alias"]
-                
+               
+                # I haven't seen this in a while, commenting out
                 # Some files have overlays in them (data placed on top of the image),
                 # it seems some of them have a VR written as "OB/OW" which
                 # is not allowed. Pydicom refuses to write out the file if it 
                 # encounters this. Changing it to OB in these cases
-                if ds.has_key((0x6000,0x3000)) and len(ds[0x6000,0x3000].VR) > 2:
-                    ds[0x6000,0x3000].VR = "OB"
+                # if ds.has_key((0x6000,0x3000)) and len(ds[0x6000,0x3000].VR) > 2:
+                #    ds[0x6000,0x3000].VR = "OB"
                 try:
                     ds.save_as(os.path.join(root,filename)) # Save over old DICOM file
                 except Exception, e:
