@@ -97,11 +97,19 @@ def get_reviewed_studies(input_file, output_file):
         radiologystudyreview__has_reconstruction = False,
         exclude = False,
         image_published = False).distinct()[0:limit]
+
+    comments = open("comments.txt", "w")
+    for study in studies:
+        f.write("%s:\n" % study.original_study_uid)
+        for review in study.radiologystudyreview_set():
+            f.write("\t%s\n" % review.comment)
+    comments.close()
+
     f = open(output_file, "w")
     for study in studies:
         f.write(study.original_study_uid+"\n")
     f.close()
-    overview.write("%d valid reviewed studies.\n" % len(studies))
+    overview.write("%d valid reviewed studies. Please review comments.txt\n" % len(studies))
 
 @follows(get_reviewed_studies, mkdir(os.path.sep.join([run_dir, "from_staging"])))
 @files(os.path.sep.join([run_dir, "studies_to_retrieve.txt"]), os.path.sep.join([run_dir, "pull_output.txt"]))
@@ -174,7 +182,7 @@ def check_patient_protocol(input_file = None, output_file = None):
 
     marked_but_not_found = reviewed_protocol_studies - found_protocol_studies
 
-    overview.write("%d studies marked as having a protocol series, %d files found with protocol series during anonymization.\n" % (len(reviewed_protocol_studies), len(found_protocol_studies)))
+    overview.write("%d studies marked as having a protocol series, %d studies found with protocol series during anonymization.\n" % (len(reviewed_protocol_studies), len(found_protocol_studies)))
     overview.write("%d studies marked as having a protocol series but not found, see 'missing_protocol_studies.txt'.\n" % len(marked_but_not_found))
 
     f = open(os.path.sep.join([run_dir, "reviewed_protocol_studies.txt"]), "w")
