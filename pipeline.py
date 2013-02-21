@@ -100,9 +100,9 @@ def get_reviewed_studies(input_file, output_file):
 
     comments = open("comments.txt", "w")
     for study in studies:
-        f.write("%s:\n" % study.original_study_uid)
+        comments.write("%s:\n" % study.original_study_uid)
         for review in study.radiologystudyreview_set():
-            f.write("\t%s\n" % review.comment)
+            comments.write("\t%s\n" % review.comment)
     comments.close()
 
     f = open(output_file, "w")
