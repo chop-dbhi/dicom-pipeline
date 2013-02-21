@@ -143,7 +143,7 @@ def scan_dicom_files(options):
                     logger.error("\tUnable to find patient with mrn %s for file %s." % (mrn, filename))
                     continue
                 
-                details["patient_alias"] = patient.alias
+                details["patient_alias"] = str(patient.alias)
             
             if not details.has_key("patient_name"):
                 name = ds[0x10,0x10].value.strip()
@@ -278,20 +278,20 @@ def add_studies(options, cache):
     
 
 
-    def move_failed_studies(valid, directory, faildir):
-        for root, dirs, files in os.walk(directory):  
-           for filename in files:
-               try:
-                    ds = dicom.read_file(os.path.join(root, filename))
-                    study_uid = ds[0x20,0xD].value.strip() 
-               except IOError, e0:
-                    study_uid = "<unable to read>"
+def move_failed_studies(valid, directory, faildir):
+    for root, dirs, files in os.walk(directory):  
+       for filename in files:
+           try:
+                ds = dicom.read_file(os.path.join(root, filename))
+                study_uid = ds[0x20,0xD].value.strip() 
+           except IOError, e0:
+                study_uid = "<unable to read>"
 
-               if study_uid == "<unable to read>" or not study_uid in valid:
-                   try:
-                      shutil.move(os.path.join(root,filename), faildir)
-                   except IOError, e1:
-                      print "Unable to move file %s with study_uid %s. Trying to move because it failed to be reconciled with a patient or an error occurred while reading the file." % (filename, study_uid)
+           if study_uid == "<unable to read>" or not study_uid in valid:
+               try:
+                  shutil.move(os.path.join(root,filename), faildir)
+               except IOError, e1:
+                  print "Unable to move file %s with study_uid %s. Trying to move because it failed to be reconciled with a patient or an error occurred while reading the file." % (filename, study_uid)
 
 
 def main():
