@@ -29,12 +29,12 @@ for study in s_studies:
         new_prod_study.number_of_series = study.number_of_series
         new_prod_study.total_images = study.total_images
 
-     new_prod_study.encounter_id = study.encounter_id
-     new_prod_study.patient_id = study.encounter.patient_id
-     new_prod_study.save()	
+    new_prod_study.encounter_id = study.encounter_id
+    new_prod_study.patient_id = study.encounter.patient_id
+    new_prod_study.save()	
 
-     print "New study %s" % study.study_uid
-     count+= 1
+    print "New study %s" % study.study_uid
+    count+= 1
 
 print "%d new studies." % count
 
