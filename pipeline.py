@@ -8,6 +8,7 @@ import datetime
 
 from optparse import OptionParser
 from ruffus import *
+from utils import dicom_count
 
 import local_settings as local
 from local_settings import *
@@ -60,24 +61,6 @@ if __name__ == "__main__":
                             last = runtime
             if last:
                 run_dir = os.path.sep.join(["data", "run_at_%d" % last])
-
-# Utility function to count the number of files and unique dicom studies in a directory structure
-def dicom_count(directory):
-   file_count = 0
-   studies = set()
-
-   for root, dirs, files in os.walk(directory):
-      for filename in files:
-          try: 
-              ds = dicom.read_file(os.path.join(root,filename))
-          except IOError:
-              sys.stderr.write("Unable to read %s" % os.path.join(root, filename))
-              continue
-          file_count += 1
-          study_uid = ds[0x20,0xD].value.strip()
-          studies.add(study_uid)
-   
-   return (file_count, len(studies))
 
 def setup_data_dir():
     global overview 
@@ -200,21 +183,16 @@ def check_patient_protocol(input_file = None, output_file = None):
         f.write(study+"\n")
     f.close()
 
-@files(os.path.sep.join([run_dir, "missing_protocol_studies.txt"]), os.path.sep.join([run_dir, "register_output.txt"]))
+@files(os.path.sep.join([run_dir, "missing_protocol_studies.txt"]), os.path.sep.join([run_dir, "post_anon_output.txt"]))
 @follows(check_patient_protocol)
-def register_with_database(input_file = None, output_file = None):
-    additional = ""
+def post_anon(input_file = None, output_file = None):
+    results = registry.get(settings.POST_ANON_HOOK)(run_dir, overview, options.practice) 
     if options.practice:
-        additional = " -p"
-    results = subprocess.check_output("python loadstudies.py%s -i identity.db -f %s -d %s" % (additional, os.path.sep.join([run_dir,"no_encounter"]), os.path.sep.join([run_dir, "to_production"])),
-        stderr=subprocess.STDOUT, shell=True)
-    if options.practice:
-        f = open(os.path.sep.join([run_dir, "register_output_practice.txt"]), "w")
+        f = open(os.path.sep.join([run_dir, "post_anon_output_practice.txt"]), "w")
     else:
-        f = open(os.path.sep.join([run_dir, "register_output.txt"]), "w")
+        f = open(os.path.sep.join([run_dir, "post_anon_output.txt"]), "w")
     f.write(results)
     f.close()
-    overview.write("%d files containing %d studies were successfully hooked up to an encounter.\n" % dicom_count(os.path.sep.join([run_dir, "to_production"])))
 
 @files(os.path.sep.join([run_dir, "register_output.txt"]), os.path.sep.join([run_dir, "push_output.txt"]))
 @follows(register_with_database)

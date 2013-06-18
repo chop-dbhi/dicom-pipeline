@@ -20,6 +20,11 @@ LOCAL_PORT = DEFAULT_PORT
 # DICOM root to be used when anonymizing DICOM files.
 DICOM_ROOT = ""
 
+# Pipeline Hooks
+
+# Name of hook registed to run after the anonymization but before pushing to production
+POST_ANON_HOOK = "default"
+
 ######### Django settings
 INSTALLED_APPS = (os.path.split(os.path.split(__file__)[0])[1],)
 
