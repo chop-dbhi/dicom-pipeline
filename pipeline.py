@@ -5,7 +5,7 @@ import os
 import re
 import dicom
 import datetime
-
+from hooks import registry
 from optparse import OptionParser
 from ruffus import *
 from utils import dicom_count
