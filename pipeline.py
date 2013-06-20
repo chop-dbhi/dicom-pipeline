@@ -194,7 +194,7 @@ def post_anon(input_file = None, output_file = None):
     f.write(results)
     f.close()
 
-@files(os.path.sep.join([run_dir, "register_output.txt"]), os.path.sep.join([run_dir, "push_output.txt"]))
+@files(os.path.sep.join([run_dir, "post_anon_output.txt"]), os.path.sep.join([run_dir, "push_output.txt"]))
 @follows(register_with_database)
 def push_to_production(input_file = None, output_file = None):
     results = subprocess.check_output("./push.sh %s %s %d %s" % (PROD_AE, PROD_HOST, PROD_PORT, os.path.sep.join([run_dir, "to_production"])), 
