@@ -24,6 +24,8 @@ identity.db
 # Ignore optimized javascripts
 dicom_review/static/scripts/javascript/min
 
+data/
+
 # All Sass files will be compiled into this directory
 dicom_review/static/stylesheets/css/*.css
 !dicom_review/static/stylesheets/img
