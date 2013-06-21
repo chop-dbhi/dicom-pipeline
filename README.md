@@ -61,7 +61,7 @@ From the root directory of the pipeline git repository, run the following comman
 
 ## Pipeline Audit Trail
 
-When the pipeline is run, it will create a directory called data in the current working directory, and within that directory, it will create a directory called run_at_<seconds_since_epoch>. This directory will be the working directory for that particular run of the pipeline. In this directory, as the pipeline progresses it will created files and directories that make up a trail of what the pipeline did. The following directories will be created:
+When the pipeline is run, it will create a directory called `data` in the current working directory (if it does not already exist), and within that directory, it will create a directory called `run_at_<seconds_since_epoch>`. This directory will be the working directory for that particular run of the pipeline. In this directory, as the pipeline progresses it will created files and directories that make up a trail of what the pipeline did. The following directories will be created:
 
 1. from_staging - this will contain all the identified DICOM files pulled from your staging PACS
 2. quarantine - this will contain files that the anonymizer deems as likely to contain PHI and that will not be pushed to production
