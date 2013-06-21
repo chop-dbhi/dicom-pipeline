@@ -3,27 +3,22 @@
 
 ## What is the DICOM Anonymization pipeline
 
-This is a software pipeline meant to perfom the following steps on on DICOM studies after they have been reviewed with [django-dicom-review](https://github.com/cbmi/django-dicom-review)
+This is a software pipeline meant to perform the following steps on DICOM studies after they have been reviewed with [django-dicom-review](https://github.com/cbmi/django-dicom-review)
 
 1. Pull the studies from a staging (identified) PACS
 1. Anonymize the studies
-1. Integrate with existing research databases
+1. Integrate with existing research databases/other post anonymization task
 1. Push the studies to a research PACS
 
 The pipeline records information about each step using log files in a time stamped directory (more details to follow). It is capable of restarting a run from a failed step.
-
 
 <center>
 <img src="https://raw.github.com/cbmi/dicom-pipeline/master/pipeline-flowchart.png"/>
 </center>
 
-
-## Caveats
-1. The integration step described above will be highly variable and depend on your task and environment. Currently this step is performed in the function add_studies with the loadstudies.py file. There are plans to make this portion easier to extend, but for now if you need to integrate with an existing database you will need look at the example provided (which is completely dependent on our applications and database schemas) and re-implement the function. 
-
 ## Architecture Assumptions
 
-This pipeline assumes you have two image archives, one where identified images are stored (staging) and one where the de-identified images will be stored (production). It is assumed that you are running the [django-dicom-review](https://github.com/cbmi/django-dicom-review) application so that it serves up to reviewers images from the identified staging archive, and this pipeline will be pushing to the production staging archive.
+This pipeline assumes you have two image archives (PACS), one where identified images are stored (staging) and one where the de-identified images will be stored (production). It is assumed that you are running the [django-dicom-review](https://github.com/cbmi/django-dicom-review) application so that it serves up to reviewers images from the identified staging archive, and this pipeline will be pushing to the production staging archive.
 
 ## Pre-requisites not automatically installed
 
@@ -50,7 +45,6 @@ pip install -U -r requirements.txt
 ```
 Once this is done, you will need to place a valid local_settings.py in your root directory. 
 
-
 ## Setup your local_settings.py file
 This settings file is used by both the Django ORM to read and write to the models that represent your studies and the DICOM utilities that receive and push the actual files to the PACS.
 
@@ -64,3 +58,84 @@ The pipeline.py file has a few options, including the ability to limit the numbe
 From the root directory of the pipeline git repository, run the following command
 
 ```python pipeline.py```
+
+## Pipeline Audit Trail
+
+When the pipeline is run, it will create a directory called data in the current working directory, and within that directory, it will create a directory called run_at_<seconds_since_epoch>. This directory will be the working directory for that particular run of the pipeline. In this directory, as the pipeline progresses it will created files and directories that make up a trail of what the pipeline did. The following directories will be created:
+
+1. from_staging - this will contain all the identified DICOM files pulled from your staging PACS
+2. quarantine - this will contain files that the anonymizer deems as likely to contain PHI and that will not be pushed to production
+3. to_production - this directory will contain the anonymized files that were pushed to production
+
+The following files will also be created:
+
+1. overview.text - This file will contain a summary of how the run went. Here is a sample:
+
+    ```
+    Starting at 2013-05-03 08:00
+    100 valid reviewed studies. Please review comments.txt
+    Received 23948 files containing 100 studies
+    1 studies marked as having a protocol series, 1 studies found with protocol series during anonymization.
+    1 studies marked as having a protocol series but not found, see 'missing_protocol_studies.txt'.
+    22755 files containing 96 studies were successfully hooked up to an encounter.
+    Push completed at 2013-05-03 15:15
+    ```
+1. comments.txt - This file just contains all the studyuids and associated reviewer comments for each. It is primarily to quickly review anything reviewers may have put in comments.
+
+1. studies\_to_retrieve.txt - This contains all the studyuids the pipeline tried to retrieve from staging.
+
+1. pull_output.txt - Output from the DICOM staging pull process.
+
+1. anonymize_output.txt - Output from the anonymizer process
+
+1. post\_anon_output.txt - Output from the post anonymization process. You can control the code that is executed here, see the next section for details.
+
+1. push_output - Output from the push to production process
+
+1. found\_protocol_studies - This is a list of all the studies found to have a series called Patient Protocol (which in our expereince is never something you want pushed to production)
+
+1. missing\_protocol_studies - If the reviewer marked a study as containing a protocol study in the review app, but it was not found during anonymization, this file will list the study uid for further review.
+
+1. reviewed\_protocol_studies.txt - A list of all the studies marked as containing a protocol study by the reviewers.
+
+
+# Customization and Hooks
+
+The most institution/project specific step in the pipeline is the post_anonymize step. For our internal implementation, and by default, this will execute the script called load_studies.py which uses the identity.db file created and maintained by the anonymizer to hook up the now de-identified studies to existing patients in a research database. It is likely that other projects will need to perform a similar task, but unlikely that the process will be the same as database schemas in existing systems will vary. The pipeline includes a hook to enable overriding the the code that gets executed at this step.
+
+1. Create a file called extra_hooks.py in the root pipeline directory.
+
+   At the top of the file do the following imports
+
+   ```python
+   from hooks import registry 
+   ```
+
+1. Define a function in the file that you want to be executed after the DICOM files have been anonymized. It should have the following signature (the function name does not matter):
+
+    ```python
+    def custom_hook(run_dir, overview, practice):
+	    """
+  	    run_dir - String containing the path of the working directory for this pipeline run. Anonymized files will be in a directory within that directory called 'to_production'. use os.path.sep.join([run_dir, 'to_production']) to get the full path.
+        overview - Stream object for printing updates that will be placed in the overview.text for the pipeline run
+        practice - Boolean, whether or not this a practice run.
+        Returns - Should return a string that will be placed in a file called post_anon_output.text which can be audited later. This is for a higher level of detail than what is written to the overview stream.
+        """
+        return "post anon complete"
+    ```
+1. At the bottom of the file, register your function with the system:
+
+    ```python
+    registry.register(custom_hook, name = 'my_custom_hook')
+    ```
+1. Finally, in your `local_settings.py` file, set `POST_ANON_HOOK` equal to the name you used in the above register command:
+    ```python
+    POST_ANON_HOOK = 'my_custom_hook'
+    ```
+
+
+
+
+
+
+
