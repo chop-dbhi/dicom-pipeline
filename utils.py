@@ -5,7 +5,7 @@ def dicom_count(directory):
 
    for root, dirs, files in os.walk(directory):
       for filename in files:
-          try:.
+          try:
               ds = dicom.read_file(os.path.join(root,filename))
           except IOError:
               sys.stderr.write("Unable to read %s" % os.path.join(root, filename))

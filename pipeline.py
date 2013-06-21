@@ -5,7 +5,6 @@ import os
 import re
 import dicom
 import datetime
-from hooks import registry
 from optparse import OptionParser
 from ruffus import *
 from utils import dicom_count
@@ -16,6 +15,7 @@ from local_settings import *
 from django.core.management import setup_environ
 setup_environ(local)
 
+from hooks import registry
 from dicom_models.staging.models import *
 
 devnull = None
