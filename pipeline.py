@@ -209,7 +209,7 @@ def push_to_production(input_file = None, output_file = None):
 
 def main():
     if options.no_push or options.practice:
-        pipeline_run([register_with_database], verbose = options.verbosity)
+        pipeline_run([post_anon], verbose = options.verbosity)
     else:
         pipeline_run([push_to_production], verbose = options.verbosity)
 
