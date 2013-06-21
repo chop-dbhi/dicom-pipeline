@@ -1,7 +1,7 @@
 # DICOM Anonymization Pipeline
 
 
-## What is the DICOM Anonymization pipeline
+## What is the DICOM Anonymization pipeline?
 
 This is a software pipeline meant to perform the following steps on DICOM studies after they have been reviewed with [django-dicom-review](https://github.com/cbmi/django-dicom-review)
 
@@ -33,7 +33,7 @@ This pipeline assumes you have two image archives (PACS), one where identified i
 
 1. Python version 2.7.1 (2.6 may work, but has not been tested). Pip must also be installed. It is highly recommended that the pipeline be installed in a clean virtualenv.
 1. git
-1. **VERY IMPORTANT** The value you are using for "LOCAL_AE", which by default is "DCMQR" (but can be changed in your local_settings.py file, see below) must be setup on your staging PACS to point to the IP address of the machine the pipeline is running on. If you are using DCM4CHEE this can be done via the AE Management tool on the web console. If this is not set properly you could **send identified DICOM data to the wrong machine**.
+1. **VERY IMPORTANT** The value you are using for "LOCAL\_AE", which by default is "DCMQR" (but can be changed in your local_settings.py file, see below) must be setup on your staging PACS to point to the IP address of the machine the pipeline is running on. If you are using DCM4CHEE this can be done via the AE Management tool on the web console. If this is not set properly you could **send identified DICOM data to the wrong machine**.
 
 ## Installation
 Run the following commands to install the pipeline. If you are using a virtualenv, you may want to clone it into that directory.
@@ -43,12 +43,12 @@ cd dicom_pipeline
 git submodule update --init
 pip install -U -r requirements.txt
 ```
-Once this is done, you will need to place a valid local_settings.py in your root directory. 
+Once this is done, you will need to place a valid local\_settings.py in your root directory. 
 
 ## Setup your local_settings.py file
 This settings file is used by both the Django ORM to read and write to the models that represent your studies and the DICOM utilities that receive and push the actual files to the PACS.
 
-In the root directory of the pipeline repository you will find a local_settings.sample.py. Rename this file local_settings.py and fill out as appropriate. The comments within the file should explain what each value represents. Again, the "LOCAL_AE" value in this file must be setup properly on your staging PACS as described in the pre-requisites section.
+In the root directory of the pipeline repository you will find a local\_settings.sample.py. Rename this file local\_settings.py and fill out as appropriate. The comments within the file should explain what each value represents. Again, the "LOCAL\_AE" value in this file must be setup properly on your staging PACS as described in the pre-requisites section.
 
 ## Running the pipeline
 If you have an existing identity.db (which is used by the anonymizer), it must be in the pipeline root directory. Otherwise it will create a new one, and it will not be able to take advantage of any previous mappings it made. For example, if you use the same identity.db file, and the anonymizer previously mapped identified Study UID 1 to anonymized Study UID 0, it will continue to use that same mapping in the current round of anonymizations. If you do not have the identity.db file, STUDY UID 1 will be re-assigned a new anonymized Study UID if encountered. 
@@ -90,18 +90,20 @@ The following files will also be created:
 
 1. post\_anon_output.txt - Output from the post anonymization process. You can control the code that is executed here, see the next section for details.
 
-1. push_output - Output from the push to production process
+1. push_output.txt - Output from the push to production process
 
-1. found\_protocol_studies - This is a list of all the studies found to have a series called Patient Protocol (which in our expereince is never something you want pushed to production)
+1. found\_protocol_studies.txt - This is a list of all the studies found to have a series called Patient Protocol (which in our expereince is never something you want pushed to production)
 
-1. missing\_protocol_studies - If the reviewer marked a study as containing a protocol study in the review app, but it was not found during anonymization, this file will list the study uid for further review.
+1. missing\_protocol_studies.txt - If the reviewer marked a study as containing a protocol study in the review app, but it was not found during anonymization, this file will list the study uid for further review.
 
 1. reviewed\_protocol_studies.txt - A list of all the studies marked as containing a protocol study by the reviewers.
 
 
-# Customization and Hooks
+# Customization
 
-The most institution/project specific step in the pipeline is the post_anonymize step. For our internal implementation, and by default, this will execute the script called load_studies.py which uses the identity.db file created and maintained by the anonymizer to hook up the now de-identified studies to existing patients in a research database. It is likely that other projects will need to perform a similar task, but unlikely that the process will be the same as database schemas in existing systems will vary. The pipeline includes a hook to enable overriding the the code that gets executed at this step.
+### Hooks
+
+The most institution/project specific step in the pipeline is the post\_anonymize step. For our internal implementation, and by default, this will execute the script called load_studies.py which uses the identity.db file created and maintained by the anonymizer to hook up the now de-identified studies to existing patients in a research database. It is likely that other projects will need to perform a similar task, but unlikely that the process will be the same as database schemas in existing systems will vary. The pipeline includes a hook to enable overriding the the code that gets executed at this step.
 
 1. Create a file called extra_hooks.py in the root pipeline directory.
 
@@ -133,8 +135,30 @@ The most institution/project specific step in the pipeline is the post_anonymize
     POST_ANON_HOOK = 'my_custom_hook'
     ```
 
+### Linking anonymized to identified studies
 
+The process of linking de-identified studies to existing de-identified patients will likely require that you to trace from the de-identified studyuids and other attributes to the identified ones. To do this, you can query the sqlite database created by the pipeline. This creates tables for some of the DICOM attributes that were cleaned with an `original` and `cleaned` field for each value that was changed. You can examine the database using the sqlite client, but some of the tables it creates are `patient`, `accession_no`, and `studyuid`. For example, if in your post\_anon_hook, you were looking at a de-identified DICOM file and you needed to find out what its original accession_no was, you could issue the following SQL query to the identity.db.
 
+```
+select original from accession_no where cleaned = '<cleaned_accession_no>';
+```
+
+### Limited Vocabulary Lists
+
+Some DICOM values can potentially contain PHI, but completely stripping them can reduce the utility of the studies for research. This is especially true for Study and Series descriptions because it makes it difficult to tell what the study contains. To accommodate this, the anonymizer allows you to enforce whitelists on specific DICOM attributes. If the value matches one on the whitelist, it will be left, if not, it will be stripped. The dictionary is stored in a file called `dicom_limited_vocabulary.json`. It is a dictionary where the keys are DICOM attributes in the format "0000,0000", and the values are lists of strings that are allowed for that value. By default, it is an empty dictionary, so nothing will be enforced. Below is an example that would allow a couple values for Study and Series description.
+
+```json
+{
+    "0008,1030": [
+        "CT CHEST W/CONTRAST",
+        "NECK STUDY"
+    ],
+    "0008,103E": [
+        "3D HEAD BONE",
+        "ST HEAD"
+    ]
+}
+```
 
 
 

@@ -19,7 +19,8 @@ tags
 
 # Ignore local settings file intended for environment-specific settings
 local_settings.py
-
+# database
+identity.db
 # Ignore optimized javascripts
 dicom_review/static/scripts/javascript/min
 

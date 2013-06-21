@@ -79,6 +79,7 @@ def get_reviewed_studies(input_file, output_file):
         radiologystudyreview__relevant = True,
         radiologystudyreview__has_reconstruction = False,
         exclude = False,
+        radiologystudyreview_exclude = False,
         image_published = False).distinct()[0:limit]
 
     comments = open(os.path.sep.join([run_dir, "comments.txt"]), "w")
