@@ -2,6 +2,7 @@ from django.db.models import Count
 from django.conf import settings
 from utils import dicom_count
 import loader
+import subprocess
 
 # run_dir: string of the working directory that the pipeline is using
 # overview: stream object used to write notes about this run of the pipeline
