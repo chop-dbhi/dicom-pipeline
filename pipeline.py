@@ -188,7 +188,7 @@ def check_patient_protocol(input_file = None, output_file = None):
 @files(os.path.sep.join([run_dir, "missing_protocol_studies.txt"]), os.path.sep.join([run_dir, "post_anon_output.txt"]))
 @follows(check_patient_protocol)
 def post_anon(input_file = None, output_file = None):
-    results = registry.get(settings.POST_ANON_HOOK)(run_dir, overview, options.practice) 
+    results = registry.get(local.POST_ANON_HOOK)(run_dir, overview, options.practice) 
     if options.practice:
         f = open(os.path.sep.join([run_dir, "post_anon_output_practice.txt"]), "w")
     else:
