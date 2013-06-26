@@ -193,7 +193,7 @@ def post_anon(input_file = None, output_file = None):
         f = open(os.path.sep.join([run_dir, "post_anon_output_practice.txt"]), "w")
     else:
         f = open(os.path.sep.join([run_dir, "post_anon_output.txt"]), "w")
-    f.write(results)
+    f.write(results+"\n")
     f.close()
 
 @files(os.path.sep.join([run_dir, "post_anon_output.txt"]), os.path.sep.join([run_dir, "push_output.txt"]))
