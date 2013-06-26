@@ -79,7 +79,7 @@ def get_reviewed_studies(input_file, output_file):
         radiologystudyreview__relevant = True,
         radiologystudyreview__has_reconstruction = False,
         exclude = False,
-        radiologystudyreview_exclude = False,
+        radiologystudyreview__exclude = False,
         image_published = False).distinct()[0:limit]
 
     comments = open(os.path.sep.join([run_dir, "comments.txt"]), "w")
@@ -146,6 +146,7 @@ def check_patient_protocol(input_file = None, output_file = None):
         radiologystudyreview__relevant = True,
         radiologystudyreview__has_reconstruction = False,
         exclude = False,
+        radiologystudyreview__exclude = False,
         radiologystudyreview__has_protocol_series = True).distinct()
 
     reviewed_protocol_studies = set([x.original_study_uid for x in protocol_studies])
