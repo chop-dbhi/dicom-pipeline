@@ -1,3 +1,4 @@
+import os
 # This will be the AE (DICOM Application Entity) of the DICOM server started on
 # this computer to receive the identified DICOM files from the staging PACS
 LOCAL_AE = "DCMQR"
