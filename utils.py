@@ -1,3 +1,5 @@
+import os
+import dicom
 # Utility function to count the number of files and unique dicom studies in a directory structure
 def dicom_count(directory):
    file_count = 0
