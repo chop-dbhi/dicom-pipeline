@@ -30,7 +30,7 @@ if __name__ == "__main__":
     parser = OptionParser()
     parser.add_option("-r", "--runlast", default=False, dest="runlast", action="store_true",
             help="Re-run last pipeline.")
-    parser.add_option("-m", "--max", default = 0, dest="limit", action="store",
+    parser.add_option("-m", "--max", default = 10, dest="limit", action="store",
             help="Maximum number of studies to run through pipeline")
     parser.add_option("-p", "--practice", default = False, dest="practice", action="store_true",
             help="Don't modify de-identified studies to include patient aliases, modify the application database, or push to production")
