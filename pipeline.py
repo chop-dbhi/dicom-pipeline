@@ -8,6 +8,7 @@ import datetime
 from optparse import OptionParser
 from ruffus import *
 from utils import dicom_count
+from dicom_anon import dicom_anon
 
 import local_settings as local
 from local_settings import *
@@ -123,11 +124,13 @@ def stop_dicom_server():
 @files(os.path.sep.join([run_dir, "pull_output.txt"]), os.path.sep.join([run_dir, "anonymize_output.txt"]))
 @follows(stop_dicom_server)
 def anonymize(input_file = None, output_file = None):
-    results = subprocess.check_output("./anonymize.sh %s %s %s %s %s" % (DICOM_ROOT,
-        os.path.sep.join([run_dir, "from_staging"]),
-        os.path.sep.join([run_dir, "to_production"]),
-        os.path.sep.join([run_dir, "quarantine"]),
-        modalities), shell=True)
+    results = dicom_anon.driver(os.path.sep.join([run_dir, "from_staging"]),
+                                os.path.sep.join([run_dir, "to_production"]),
+                                "identity.db",
+                                "dicom_limited_vocab.json",
+                                os.path.sep.join([run_dir, "quarantine"]),
+                                allowed_modalities=modalities,
+                                org_root = DICOM_ROOT)
 
     f = open(os.path.sep.join([run_dir, "anonymize_output.txt"]), "w")
     f.write(results)

@@ -22,10 +22,7 @@ This pipeline assumes you have two image archives (PACS), one where identified i
 
 ## Pre-requisites not automatically installed
 
-1. rvm must be installed and activated. The following versions of ruby must be installed within rvm (using ```rvm install <version #>```)
-    * 1.8.7
-        * install json and sqlite3 gems
-    * 1.9.2
+1. rvm must be installed and activated. Install 1.9.2.
 
 1. A recent version of Java. 
 
