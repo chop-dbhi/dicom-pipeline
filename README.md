@@ -22,8 +22,6 @@ This pipeline assumes you have two image archives (PACS), one where identified i
 
 ## Pre-requisites not automatically installed
 
-1. rvm must be installed and activated. Install 1.9.2.
-
 1. A recent version of Java. 
 
 1. The [dcm4che2 toolkit](http://sourceforge.net/projects/dcm4che/files/dcm4che2/) must be downloaded and the bin directory from the toolkit must be on the system path.
