@@ -148,7 +148,7 @@ def check_patient_protocol(input_file = None, output_file = None):
     studies_file = open(file_name, "r")
     studies = studies_file.read().splitlines()
     studies_file.close()
- 
+
     protocol_studies = RadiologyStudy.objects.filter(original_study_uid__in=studies,
         radiologystudyreview__has_phi = False,
         radiologystudyreview__relevant = True,
@@ -217,15 +217,45 @@ def push_to_production(input_file = None, output_file = None):
     now = datetime.datetime.now()
     overview.write("Push completed at %s\n" % now.strftime("%Y-%m-%d %H:%M"))
 
+@files(os.path.sep.join([run_dir, "push_output.txt"]), os.path.sep.join([run_dir, "done.txt"]))
+@follows(push_to_production)
+def set_as_pushed(input_file=None, output_file=None):
+    production_dir = os.path.sep.join([run_dir, "to_production"])
+    studies = set()
+    for root, dirs, files in os.walk(production_dir):
+        for filename in files:
+            if filename.startswith('.'):
+                continue
+            try:
+                ds = dicom.read_file(os.path.join(root,filename))
+            except IOError:
+                sys.stderr.write("Unable to read %s" % os.path.join(root, filename))
+                continue
+
+            study_uid = ds[0x20,0xD].value.strip()
+            if not study_uid in studies:
+                studies.add(study_uid)
+
+    for study in studies:
+        rs = RadiologyStudy.objects.get(original_study_uid=study)
+        rs.image_published = True
+        rs.save()
+
+    overview.write("%d studies marked as pushed\n" % len(studies))
+
+    f = open(os.path.sep.join([run_dir, "done.txt"]), "w")
+    now = datetime.datetime.now()
+    f.write("Pipeline completed at %s\n" % now.strftime("%Y-%m-%d %H:%M"))
+    f.close()
+
 def main():
     if options.no_push or options.practice:
         pipeline_run([post_anon], verbose = options.verbosity)
     else:
-        pipeline_run([push_to_production], verbose = options.verbosity)
+        pipeline_run([set_as_pushed], verbose = options.verbosity)
 
     if overview: 
         overview.close()
-
 
 if __name__ == "__main__":
     main()
