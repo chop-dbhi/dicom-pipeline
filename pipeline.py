@@ -126,11 +126,11 @@ def stop_dicom_server():
 def anonymize(input_file = None, output_file = None):
     results = dicom_anon.driver(os.path.sep.join([run_dir, "from_staging"]),
                                 os.path.sep.join([run_dir, "to_production"]),
-                                "identity.db",
-                                "dicom_limited_vocab.json",
-                                os.path.sep.join([run_dir, "quarantine"]),
+                                quarantine_dir = os.path.sep.join([run_dir, "quarantine"]),
+                                audit_file="identity.db",
                                 allowed_modalities=modalities,
-                                org_root = DICOM_ROOT)
+                                org_root = DICOM_ROOT,
+                                white_list_file = "dicom_limited_vocab.json")
 
     f = open(os.path.sep.join([run_dir, "anonymize_output.txt"]), "w")
     f.write(results)
