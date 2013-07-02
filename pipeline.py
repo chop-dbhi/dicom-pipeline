@@ -5,6 +5,7 @@ import os
 import re
 import dicom
 import datetime
+import shutil
 from optparse import OptionParser
 from ruffus import *
 from utils import dicom_count
@@ -124,17 +125,21 @@ def stop_dicom_server():
 @files(os.path.sep.join([run_dir, "pull_output.txt"]), os.path.sep.join([run_dir, "anonymize_output.txt"]))
 @follows(stop_dicom_server)
 def anonymize(input_file = None, output_file = None):
-    results = dicom_anon.driver(os.path.sep.join([run_dir, "from_staging"]),
-                                os.path.sep.join([run_dir, "to_production"]),
-                                quarantine_dir = os.path.sep.join([run_dir, "quarantine"]),
-                                audit_file="identity.db",
-                                allowed_modalities=modalities,
-                                org_root = DICOM_ROOT,
-                                white_list_file = "dicom_limited_vocab.json")
+    result = dicom_anon.driver(os.path.sep.join([run_dir, "from_staging"]),
+           os.path.sep.join([run_dir, "to_production"]),
+           quarantine_dir = os.path.sep.join([run_dir, "quarantine"]),
+           audit_file="identity.db",
+           allowed_modalities=modalities,
+           org_root = DICOM_ROOT,
+           white_list_file = "dicom_limited_vocab.json",
+           log_file=os.path.sep.join([run_dir, "anonymize_in_progress.txt"]))
 
-    f = open(os.path.sep.join([run_dir, "anonymize_output.txt"]), "w")
-    f.write(results)
-    f.close()
+    if result:
+       shutil.move(os.path.sep.join([run_dir, "anonymize_in_progress.txt"]), 
+           os.path.sep.join([run_dir, "anonymize_output"]))
+    else:
+       overview.write("Error during anonymization, see anonymize_in_progress.text\n")
+       sys.exit()
 
 @files(os.path.sep.join([run_dir, "anonymize_output.txt"]), os.path.sep.join([run_dir, "missing_protocol_studies.txt"]))
 @follows(anonymize)
