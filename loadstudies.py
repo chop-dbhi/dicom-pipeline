@@ -266,7 +266,6 @@ def add_studies(options, cache):
         rs.number_of_series=cache[study]['num_series']
         rs.total_images=cache[study]['num_images']
         rs.modality=cache[study]['modality']
-        rs.image_published = True
         rs.pub_date = rs.pub_date or now
         rs.sop_class=cache[study]["sop_class_uid"]
         

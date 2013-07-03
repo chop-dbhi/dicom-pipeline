@@ -1,7 +1,6 @@
 # "Borrowed" from https://github.com/cbmi/avocado/blob/2.x/avocado/core/loader.py
 import inspect
 from django.conf import settings
-from django.utils.importlib import import_module
 from django.core.exceptions import ImproperlyConfigured
 
 
@@ -88,14 +87,13 @@ class Registry(object):
         return sorted((x, x) for x in self._registry.iterkeys())
 
 
-def autodiscover(module_name):
+def autodiscover():
     """Simple auto-discover for looking through each INSTALLED_APPS for each
     ``module_name`` and fail silently when not found. This should be used for
     modules that have 'registration' like behavior.
     """
-    for app in settings.INSTALLED_APPS:
-        # Attempt to import the app's ``module_name``.
-        try:
-            import_module(u'{0}.{1}'.format(app, module_name))
-        except:
-            pass
+    # Attempt to import custom_hooks 
+    try:
+        import custom_hooks
+    except:
+        pass

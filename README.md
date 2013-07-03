@@ -16,16 +16,13 @@ The pipeline records information about each step using log files in a time stamp
 <img src="https://raw.github.com/cbmi/dicom-pipeline/master/pipeline-flowchart.png"/>
 </center>
 
-## Architecture Assumptions
+## Notice
+This pipeline is currently using a very new DICOM anonymizer (located at http://github.com/cbmi/dicom-anon). Please us with caution and report any issues.
 
+## Architecture Assumptions
 This pipeline assumes you have two image archives (PACS), one where identified images are stored (staging) and one where the de-identified images will be stored (production). It is assumed that you are running the [django-dicom-review](https://github.com/cbmi/django-dicom-review) application so that it serves up to reviewers images from the identified staging archive, and this pipeline will be pushing to the production staging archive.
 
 ## Pre-requisites not automatically installed
-
-1. rvm must be installed and activated. The following versions of ruby must be installed within rvm (using ```rvm install <version #>```)
-    * 1.8.7
-        * install json and sqlite3 gems
-    * 1.9.2
 
 1. A recent version of Java. 
 
@@ -103,9 +100,9 @@ The following files will also be created:
 
 ### Hooks
 
-The most institution/project specific step in the pipeline is the post\_anonymize step. For our internal implementation, and by default, this will execute the script called load_studies.py which uses the identity.db file created and maintained by the anonymizer to hook up the now de-identified studies to existing patients in a research database. It is likely that other projects will need to perform a similar task, but unlikely that the process will be the same as database schemas in existing systems will vary. The pipeline includes a hook to enable overriding the the code that gets executed at this step.
+The most institution/project specific step in the pipeline is the post\_anonymize step. For our internal implementation, and by default, this will execute the script called load_studies.py which uses the identity.db file created and maintained by the anonymizer to hook up the now de-identified studies to existing patients in a research database. It is likely that other projects will need to perform a similar task, but unlikely that the process will be the same as database schemas in existing systems will vary. The pipeline includes a hook to enable overriding the code that gets executed at this step.
 
-1. Create a file called extra_hooks.py in the root pipeline directory.
+1. Create a file called custom_hooks.py in the root pipeline directory.
 
    At the top of the file do the following imports
 
@@ -143,9 +140,9 @@ The process of linking de-identified studies to existing de-identified patients 
 select original from accession_no where cleaned = '<cleaned_accession_no>';
 ```
 
-### Limited Vocabulary Lists
+### White lists
 
-Some DICOM values can potentially contain PHI, but completely stripping them can reduce the utility of the studies for research. This is especially true for Study and Series descriptions because it makes it difficult to tell what the study contains. To accommodate this, the anonymizer allows you to enforce whitelists on specific DICOM attributes. If the value matches one on the whitelist, it will be left, if not, it will be stripped. The dictionary is stored in a file called `dicom_limited_vocabulary.json`. It is a dictionary where the keys are DICOM attributes in the format "0000,0000", and the values are lists of strings that are allowed for that value. By default, it is an empty dictionary, so nothing will be enforced. Below is an example that would allow a couple values for Study and Series description.
+Some DICOM values can potentially contain PHI, but completely stripping them can reduce the utility of the studies for research. This is especially true for Study and Series descriptions because it makes it difficult to tell what the study contains. To accommodate this, the anonymizer allows you to enforce white lists on specific DICOM attributes. If the value matches one on the white list, it will be left, if not, it will be stripped. The dictionary is stored in a file called `dicom_limited_vocabulary.json`. It is a dictionary where the keys are DICOM attributes in the format "0000,0000", and the values are lists of strings that are allowed for that value. By default, it is an empty dictionary, so nothing will be enforced. Below is an example that would allow a couple values for Study and Series description.
 
 ```json
 {

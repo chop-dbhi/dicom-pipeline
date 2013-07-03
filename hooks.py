@@ -16,13 +16,11 @@ def associate_to_existing_studies(run_dir, overview, practice):
         stderr=subprocess.STDOUT, shell=True)
     overview.write("%d files containing %d studies were successfully hooked up to an encounter.\n" % dicom_count(os.path.sep.join([run_dir, "to_production"])))
     return results
-    
+
 def simple_hook(run_dir, overview, practice):
-    # TODO mark each study as pushed
-    overview.write("Hooking up to encounters.\n")
-    return "All studies hooked to encounter"
+    overview.write("Pass thru hook\n")
+    return "Simple pass thru post anon hook"
 
 registry = loader.Registry(default=associate_to_existing_studies, default_name = "default")
 registry.register(simple_hook, name = "simple")
-
-loader.autodiscover('extra_hooks')
+loader.autodiscover()

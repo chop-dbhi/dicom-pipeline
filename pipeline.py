@@ -5,9 +5,12 @@ import os
 import re
 import dicom
 import datetime
+import shutil
+import sqlite3
 from optparse import OptionParser
 from ruffus import *
 from utils import dicom_count
+from dicom_anon import dicom_anon
 
 import local_settings as local
 from local_settings import *
@@ -17,6 +20,8 @@ setup_environ(local)
 
 from hooks import registry
 from dicom_models.staging.models import *
+
+GET_ORIGINAL_QUERY = "SELECT original FROM studyinstanceuid WHERE cleaned = ?"
 
 devnull = None
 dicom_store_scp = None
@@ -36,7 +41,7 @@ if __name__ == "__main__":
             help="Don't modify de-identified studies to include patient aliases, modify the application database, or push to production")
     parser.add_option("-v", "--verbosity", default = 5, dest = "verbosity", action = "store",
             help="Specify pipeline versbosity, 1-10. See Ruffus documentation for details.")
-    parser.add_option("-a", "--allowed_modalities", default = "MR,CT", dest = "modalities", action = "store",
+    parser.add_option("-a", "--allowed_modalities", default = "mr,ct", dest = "modalities", action = "store",
             help="Comma separated list of allowed modality types. Defaults to 'MR,CT'")
     parser.add_option("-n", "--no_push", default = False, dest = "no_push", action = "store_true",
             help="Do not push studies to production PACS (stops after registering studies with encounter in database).")
@@ -47,7 +52,7 @@ if __name__ == "__main__":
     except ValueError:
         print "Max argument must be a number"
         sys.exit()
-    modalities = options.modalities
+    modalities = options.modalities.lower()
 
     if options.runlast:
         if os.path.exists("data"):
@@ -123,15 +128,21 @@ def stop_dicom_server():
 @files(os.path.sep.join([run_dir, "pull_output.txt"]), os.path.sep.join([run_dir, "anonymize_output.txt"]))
 @follows(stop_dicom_server)
 def anonymize(input_file = None, output_file = None):
-    results = subprocess.check_output("./anonymize.sh %s %s %s %s %s" % (DICOM_ROOT,
-        os.path.sep.join([run_dir, "from_staging"]),
-        os.path.sep.join([run_dir, "to_production"]),
-        os.path.sep.join([run_dir, "quarantine"]),
-        modalities), shell=True)
+    result = dicom_anon.driver(os.path.sep.join([run_dir, "from_staging"]),
+           os.path.sep.join([run_dir, "to_production"]),
+           quarantine_dir = os.path.sep.join([run_dir, "quarantine"]),
+           audit_file="identity.db",
+           allowed_modalities=modalities,
+           org_root = DICOM_ROOT,
+           white_list_file = "dicom_limited_vocab.json",
+           log_file=os.path.sep.join([run_dir, "anonymize_in_progress.txt"]))
 
-    f = open(os.path.sep.join([run_dir, "anonymize_output.txt"]), "w")
-    f.write(results)
-    f.close()
+    if result:
+       shutil.move(os.path.sep.join([run_dir, "anonymize_in_progress.txt"]), 
+           os.path.sep.join([run_dir, "anonymize_output.txt"]))
+    else:
+       overview.write("Error during anonymization, see anonymize_in_progress.text\n")
+       sys.exit()
 
 @files(os.path.sep.join([run_dir, "anonymize_output.txt"]), os.path.sep.join([run_dir, "missing_protocol_studies.txt"]))
 @follows(anonymize)
@@ -140,7 +151,7 @@ def check_patient_protocol(input_file = None, output_file = None):
     studies_file = open(file_name, "r")
     studies = studies_file.read().splitlines()
     studies_file.close()
- 
+
     protocol_studies = RadiologyStudy.objects.filter(original_study_uid__in=studies,
         radiologystudyreview__has_phi = False,
         radiologystudyreview__relevant = True,
@@ -199,7 +210,8 @@ def post_anon(input_file = None, output_file = None):
 @files(os.path.sep.join([run_dir, "post_anon_output.txt"]), os.path.sep.join([run_dir, "push_output.txt"]))
 @follows(post_anon)
 def push_to_production(input_file = None, output_file = None):
-    results = subprocess.check_output("./push.sh %s %s %d %s" % (PROD_AE, PROD_HOST, PROD_PORT, os.path.sep.join([run_dir, "to_production"])), 
+
+    results = subprocess.check_output("dcmsnd %s@%s:%d %s" % (PROD_AE, PROD_HOST, PROD_PORT, os.path.sep.join([run_dir, "to_production"])), 
         shell=True)
 
     f = open(os.path.sep.join([run_dir, "push_output.txt"]), "w")
@@ -208,15 +220,51 @@ def push_to_production(input_file = None, output_file = None):
     now = datetime.datetime.now()
     overview.write("Push completed at %s\n" % now.strftime("%Y-%m-%d %H:%M"))
 
+@files(os.path.sep.join([run_dir, "push_output.txt"]), os.path.sep.join([run_dir, "done.txt"]))
+@follows(push_to_production)
+def set_as_pushed(input_file=None, output_file=None):
+    production_dir = os.path.sep.join([run_dir, "to_production"])
+    studies = set()
+    for root, dirs, files in os.walk(production_dir):
+        for filename in files:
+            if filename.startswith('.'):
+                continue
+            try:
+                ds = dicom.read_file(os.path.join(root,filename))
+            except IOError:
+                sys.stderr.write("Unable to read %s" % os.path.join(root, filename))
+                continue
+
+            study_uid = ds[0x20,0xD].value.strip()
+            if not study_uid in studies:
+                studies.add(study_uid)
+
+    conn = sqlite3.connect('identity.db')
+    c = conn.cursor()
+
+    for study in studies:
+        result = c.execute(GET_ORIGINAL_QUERY, (study,))
+        original = result.fetchall()[0][0]
+        rs = RadiologyStudy.objects.get(original_study_uid=original)
+        rs.image_published = True
+        rs.save()
+
+    conn.close()
+    overview.write("%d studies marked as pushed\n" % len(studies))
+
+    f = open(os.path.sep.join([run_dir, "done.txt"]), "w")
+    now = datetime.datetime.now()
+    f.write("Pipeline completed at %s\n" % now.strftime("%Y-%m-%d %H:%M"))
+    f.close()
+
 def main():
     if options.no_push or options.practice:
         pipeline_run([post_anon], verbose = options.verbosity)
     else:
-        pipeline_run([push_to_production], verbose = options.verbosity)
+        pipeline_run([set_as_pushed], verbose = options.verbosity)
 
     if overview: 
         overview.close()
-
 
 if __name__ == "__main__":
     main()

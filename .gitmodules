@@ -1,9 +1,6 @@
-[submodule "ruby_dicom_cbmi"]
-	path = ruby_dicom_cbmi
-	url = https://github.com/cbmi/ruby-dicom.git
-[submodule "ruby_dicom"]
-	path = ruby_dicom
-	url = https://github.com/dicom/ruby-dicom.git
 [submodule "dicom_tools"]
 	path = dicom_tools
 	url = https://github.com/cbmi/dicom-tools.git
+[submodule "dicom_anon"]
+	path = dicom_anon
+	url = https://github.com/cbmi/dicom-anon.git
