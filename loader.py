@@ -93,8 +93,8 @@ def autodiscover():
     ``module_name`` and fail silently when not found. This should be used for
     modules that have 'registration' like behavior.
     """
-   # Attempt to import custom_hooks 
-   try:
-       import custom_hooks
-   except:
-       pass
+    # Attempt to import custom_hooks 
+    try:
+        import custom_hooks
+    except:
+        pass
