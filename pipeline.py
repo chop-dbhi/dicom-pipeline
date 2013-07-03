@@ -6,6 +6,7 @@ import re
 import dicom
 import datetime
 import shutil
+import sqlite3
 from optparse import OptionParser
 from ruffus import *
 from utils import dicom_count
@@ -19,6 +20,8 @@ setup_environ(local)
 
 from hooks import registry
 from dicom_models.staging.models import *
+
+GET_ORIGINAL_QUERY = "SELECT original FROM studyinstanceuid WHERE cleaned = ?"
 
 devnull = None
 dicom_store_scp = None
@@ -236,11 +239,17 @@ def set_as_pushed(input_file=None, output_file=None):
             if not study_uid in studies:
                 studies.add(study_uid)
 
+    conn = sqlite3.connect('identity.db')
+    c = conn.cursor()
+
     for study in studies:
-        rs = RadiologyStudy.objects.get(original_study_uid=study)
+        result = c.execute(GET_ORIGINAL_QUERY, (study,))
+        original = result.fetchall[0][0]
+        rs = RadiologyStudy.objects.get(original_study_uid=original)
         rs.image_published = True
         rs.save()
 
+    conn.close()
     overview.write("%d studies marked as pushed\n" % len(studies))
 
     f = open(os.path.sep.join([run_dir, "done.txt"]), "w")
