@@ -136,7 +136,7 @@ def anonymize(input_file = None, output_file = None):
 
     if result:
        shutil.move(os.path.sep.join([run_dir, "anonymize_in_progress.txt"]), 
-           os.path.sep.join([run_dir, "anonymize_output"]))
+           os.path.sep.join([run_dir, "anonymize_output.txt"]))
     else:
        overview.write("Error during anonymization, see anonymize_in_progress.text\n")
        sys.exit()
