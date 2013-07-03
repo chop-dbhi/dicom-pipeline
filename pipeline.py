@@ -244,7 +244,7 @@ def set_as_pushed(input_file=None, output_file=None):
 
     for study in studies:
         result = c.execute(GET_ORIGINAL_QUERY, (study,))
-        original = result.fetchall[0][0]
+        original = result.fetchall()[0][0]
         rs = RadiologyStudy.objects.get(original_study_uid=original)
         rs.image_published = True
         rs.save()
