@@ -98,9 +98,9 @@ The following files will also be created:
 
 ### Hooks
 
-The most institution/project specific step in the pipeline is the post\_anonymize step. For our internal implementation, and by default, this will execute the script called load_studies.py which uses the identity.db file created and maintained by the anonymizer to hook up the now de-identified studies to existing patients in a research database. It is likely that other projects will need to perform a similar task, but unlikely that the process will be the same as database schemas in existing systems will vary. The pipeline includes a hook to enable overriding the the code that gets executed at this step.
+The most institution/project specific step in the pipeline is the post\_anonymize step. For our internal implementation, and by default, this will execute the script called load_studies.py which uses the identity.db file created and maintained by the anonymizer to hook up the now de-identified studies to existing patients in a research database. It is likely that other projects will need to perform a similar task, but unlikely that the process will be the same as database schemas in existing systems will vary. The pipeline includes a hook to enable overriding the code that gets executed at this step.
 
-1. Create a file called extra_hooks.py in the root pipeline directory.
+1. Create a file called custom_hooks.py in the root pipeline directory.
 
    At the top of the file do the following imports
 

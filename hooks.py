@@ -23,5 +23,4 @@ def simple_hook(run_dir, overview, practice):
 
 registry = loader.Registry(default=associate_to_existing_studies, default_name = "default")
 registry.register(simple_hook, name = "simple")
-
-loader.autodiscover('extra_hooks')
+loader.autodiscover()
