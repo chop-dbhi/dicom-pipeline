@@ -16,8 +16,10 @@ The pipeline records information about each step using log files in a time stamp
 <img src="https://raw.github.com/cbmi/dicom-pipeline/master/pipeline-flowchart.png"/>
 </center>
 
-## Architecture Assumptions
+## Notice
+This pipeline is currently using a very new DICOM anonymizer (located at http://github.com/cbmi/dicom-anon). Please us with caution and report any issues.
 
+## Architecture Assumptions
 This pipeline assumes you have two image archives (PACS), one where identified images are stored (staging) and one where the de-identified images will be stored (production). It is assumed that you are running the [django-dicom-review](https://github.com/cbmi/django-dicom-review) application so that it serves up to reviewers images from the identified staging archive, and this pipeline will be pushing to the production staging archive.
 
 ## Pre-requisites not automatically installed
@@ -138,9 +140,9 @@ The process of linking de-identified studies to existing de-identified patients 
 select original from accession_no where cleaned = '<cleaned_accession_no>';
 ```
 
-### Limited Vocabulary Lists
+### White lists
 
-Some DICOM values can potentially contain PHI, but completely stripping them can reduce the utility of the studies for research. This is especially true for Study and Series descriptions because it makes it difficult to tell what the study contains. To accommodate this, the anonymizer allows you to enforce whitelists on specific DICOM attributes. If the value matches one on the whitelist, it will be left, if not, it will be stripped. The dictionary is stored in a file called `dicom_limited_vocabulary.json`. It is a dictionary where the keys are DICOM attributes in the format "0000,0000", and the values are lists of strings that are allowed for that value. By default, it is an empty dictionary, so nothing will be enforced. Below is an example that would allow a couple values for Study and Series description.
+Some DICOM values can potentially contain PHI, but completely stripping them can reduce the utility of the studies for research. This is especially true for Study and Series descriptions because it makes it difficult to tell what the study contains. To accommodate this, the anonymizer allows you to enforce white lists on specific DICOM attributes. If the value matches one on the white list, it will be left, if not, it will be stripped. The dictionary is stored in a file called `dicom_limited_vocabulary.json`. It is a dictionary where the keys are DICOM attributes in the format "0000,0000", and the values are lists of strings that are allowed for that value. By default, it is an empty dictionary, so nothing will be enforced. Below is an example that would allow a couple values for Study and Series description.
 
 ```json
 {
