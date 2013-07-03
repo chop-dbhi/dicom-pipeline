@@ -1,7 +1,6 @@
 # "Borrowed" from https://github.com/cbmi/avocado/blob/2.x/avocado/core/loader.py
 import inspect
 from django.conf import settings
-from django.utils.importlib import import_module
 from django.core.exceptions import ImproperlyConfigured
 
 
