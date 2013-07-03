@@ -38,7 +38,7 @@ if __name__ == "__main__":
             help="Don't modify de-identified studies to include patient aliases, modify the application database, or push to production")
     parser.add_option("-v", "--verbosity", default = 5, dest = "verbosity", action = "store",
             help="Specify pipeline versbosity, 1-10. See Ruffus documentation for details.")
-    parser.add_option("-a", "--allowed_modalities", default = "MR,CT", dest = "modalities", action = "store",
+    parser.add_option("-a", "--allowed_modalities", default = "mr,ct", dest = "modalities", action = "store",
             help="Comma separated list of allowed modality types. Defaults to 'MR,CT'")
     parser.add_option("-n", "--no_push", default = False, dest = "no_push", action = "store_true",
             help="Do not push studies to production PACS (stops after registering studies with encounter in database).")
@@ -49,7 +49,7 @@ if __name__ == "__main__":
     except ValueError:
         print "Max argument must be a number"
         sys.exit()
-    modalities = options.modalities
+    modalities = options.modalities.lower()
 
     if options.runlast:
         if os.path.exists("data"):
