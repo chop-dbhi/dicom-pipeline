@@ -6,6 +6,6 @@
 
 # Core requirements
 django>=1.5
-git+http://github.com/cbmi/django-dicom-models.git
+git+https://github.com/cbmi/django-dicom-models.git
 ruffus
 pydicom
