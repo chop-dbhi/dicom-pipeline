@@ -33,13 +33,13 @@ table_map = {
  "0008,1049": "physofrecordid",          # Physician(s) of Record Identification
  "0008,1050": "perfphysname",            # Performing Physician's Name
  "0008,1060": "readphysname",            # Reading Physicians Name
- "0008,1070": "operator",                # Operator's Name
- "0008,1010": "station",                 # Station name
- "0010,0010": "patient",                 # Patient's name                              
+ "0008,1070": "operatorsname",           # Operator's Name
+ "0008,1010": "stationname",             # Station name
+ "0010,0010": "patientname",             # Patient's name                              
  "0010,1005": "patientbname",            # Patient's Birth Name
- "0010,0020": "id",                      # Patient's ID
- "0008,0020": "date",                    # Study Date
- "0008,0050": "accession"                # Accession number
+ "0010,0020": "patientid",               # Patient's ID
+ "0008,0020": "studydate",               # Study Date
+ "0008,0050": "accessionnumber"          # Accession number
 }
 
 sop_class = { "1.2.840.10008.5.1.4.1.1.4" : "MR",
@@ -81,34 +81,40 @@ def scan_dicom_files(options):
 
             details = cache.setdefault(study_uid,{'manufactured':False, "series":[], "num_series":0, "num_images":0, "accession":[]})
 
-            # Get the original accesion number
-            accession_cleaned = ds[0x8,0x50].value.strip()
-            rows = cursor.execute("select original from %s where cleaned=?" % 
-                                  table_map["0008,0050"],(accession_cleaned,)).fetchall()
-            try:
-                accession = rows[0][0]
-            except IndexError, e:
-                logger.error("Unable to find accession number for %s in identity database. Study in file %s may not be added to the database" % (accession_cleaned, filename))
-                continue 
-            
-            if not accession in details["accession"]:
-                  details["accession"].append(accession)
-            
-            if not series in details["series"]:
-                details["series"].append(series)
-                details["num_series"] = len(details["series"])
-            details["num_images"] += 1
-
-            if not details.has_key("orig_study_uid"):
-                rows = cursor.execute("select original from studyuid where cleaned=?",(study_uid,)).fetchall()
+            if not details.has_key("orig_study_db_id"):
+                rows = cursor.execute("select id, original from studyinstanceuid where cleaned=?",(study_uid,)).fetchall()
                 orig_study_uid = None
+                pk = None
                 try:
-                    orig_study_uid = rows[0][0]
+                    pk = rows[0][0] 
+                    orig_study_uid = rows[0][1]
                 except IndexError, e:
                     logger.error("Unable to find original study id for cleaned study uid %s" % study_uid)
                     conn.close()
                     sys.exit()
                 details["orig_study_uid"] = orig_study_uid
+                details["orig_study_db_id"] = pk
+            else:
+                pk = details["orig_study_db_id"] 
+
+            # Get the original accesion number
+            accession_cleaned = ds[0x8,0x50].value.strip()
+            rows = cursor.execute("select original from %s where cleaned=? and studyinstanceuid=?" % 
+                                  table_map["0008,0050"],(accession_cleaned, pk)).fetchall()
+            try:
+                accession = rows[0][0]
+            except IndexError, e:
+                logger.error("Unable to find accession number for %s in identity database. Study in file %s may not be added to the database" % (accession_cleaned, filename))
+                continue 
+
+            if not accession in details["accession"]:
+                  details["accession"].append(accession)
+
+            if not series in details["series"]:
+                details["series"].append(series)
+                details["num_series"] = len(details["series"])
+            details["num_images"] += 1
+
 
             if not details.has_key("file"):
                 details["file"] = os.path.join(root,filename)
@@ -123,8 +129,8 @@ def scan_dicom_files(options):
                 
             if not details.has_key("patient_alias"):
                 cleaned_patient_id = ds[0x10,0x20].value.strip()
-                rows = cursor.execute("select original from %s where cleaned=?" % 
-                                      table_map["0010,0020"],(cleaned_patient_id,)).fetchall()
+                rows = cursor.execute("select original from %s where cleaned=? and studyinstanceuid=?" % 
+                                      table_map["0010,0020"],(cleaned_patient_id, pk)).fetchall()
                 mrn = None
                 patient = None
                 try:
@@ -150,7 +156,7 @@ def scan_dicom_files(options):
                 details["patient_name"] = name
             
             if not details.has_key("date"):
-                rows = cursor.execute("select date from studyuid where cleaned=?",(study_uid,)).fetchall()
+                rows = cursor.execute("select original from studydate where studyinstanceuid=?",(pk,)).fetchall()
                 study_date = None
                 try:
                     study_date = rows[0][0]
