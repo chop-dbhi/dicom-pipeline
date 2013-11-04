@@ -99,7 +99,7 @@ def scan_dicom_files(options):
 
             # Get the original accesion number
             accession_cleaned = ds[0x8,0x50].value.strip()
-            rows = cursor.execute("select original from %s where cleaned=? and studyinstanceuid=?" % 
+            rows = cursor.execute("select original from %s where cleaned=? and study=?" % 
                                   table_map["0008,0050"],(accession_cleaned, pk)).fetchall()
             try:
                 accession = rows[0][0]
@@ -129,7 +129,7 @@ def scan_dicom_files(options):
                 
             if not details.has_key("patient_alias"):
                 cleaned_patient_id = ds[0x10,0x20].value.strip()
-                rows = cursor.execute("select original from %s where cleaned=? and studyinstanceuid=?" % 
+                rows = cursor.execute("select original from %s where cleaned=? and study=?" % 
                                       table_map["0010,0020"],(cleaned_patient_id, pk)).fetchall()
                 mrn = None
                 patient = None
@@ -156,7 +156,7 @@ def scan_dicom_files(options):
                 details["patient_name"] = name
             
             if not details.has_key("date"):
-                rows = cursor.execute("select original from studydate where studyinstanceuid=?",(pk,)).fetchall()
+                rows = cursor.execute("select original from studydate where study=?",(pk,)).fetchall()
                 study_date = None
                 try:
                     study_date = rows[0][0]
