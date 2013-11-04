@@ -79,13 +79,21 @@ def setup_data_dir():
 @follows(setup_data_dir)
 @files(None, os.path.sep.join([run_dir, "studies_to_retrieve.txt"]))
 def get_reviewed_studies(input_file, output_file):
-    #TODO Check here for conflicting reviews if more than 1 review is permitted
     studies = RadiologyStudy.objects.filter(radiologystudyreview__has_phi = False,
         radiologystudyreview__relevant = True,
         radiologystudyreview__has_reconstruction = False,
         exclude = False,
-        radiologystudyreview__exclude = False,
-        image_published = False).distinct()[0:limit]
+        image_published = False).exclude(radiologystudyreview__exclude = True).distinct()[0:limit]
+    
+    # Go through and for each study, make sure we do not have any conflicting reviews
+    stop = False    
+    for study in studies:
+        for review in study.radiologystudyreview_set.all():
+            if review.has_phi or review.exclude == True or review.relevant == False or has_reconstruction == True:
+                stop = True
+                msg = "Study %d has conflicting reviews, please address manually and continue pipeline. If an issue is found, remove the uid from studies_to_retrieve.txt.\n" % study.original_study_uid
+                overview.write(msg)
+                print msg,
 
     comments = open(os.path.sep.join([run_dir, "comments.txt"]), "w")
     for study in studies:
@@ -99,6 +107,10 @@ def get_reviewed_studies(input_file, output_file):
         f.write(study.original_study_uid+"\n")
     f.close()
     overview.write("%d valid reviewed studies. Please review comments.txt\n" % len(studies))
+    
+    if stop:
+        overview.close()
+        sys.exit()
 
 @follows(get_reviewed_studies, mkdir(os.path.sep.join([run_dir, "from_staging"])))
 @files(os.path.sep.join([run_dir, "studies_to_retrieve.txt"]), os.path.sep.join([run_dir, "pull_output.txt"]))
@@ -159,8 +171,7 @@ def check_patient_protocol(input_file = None, output_file = None):
         radiologystudyreview__relevant = True,
         radiologystudyreview__has_reconstruction = False,
         exclude = False,
-        radiologystudyreview__exclude = False,
-        radiologystudyreview__has_protocol_series = True).distinct()
+        radiologystudyreview__has_protocol_series = True).exclude(radiologystudyreview__exclude = True).distinct()
 
     reviewed_protocol_studies = set([x.original_study_uid for x in protocol_studies])
 
