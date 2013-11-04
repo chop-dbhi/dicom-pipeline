@@ -89,7 +89,7 @@ def get_reviewed_studies(input_file, output_file):
     stop = False    
     for study in studies:
         for review in study.radiologystudyreview_set.all():
-            if review.has_phi or review.exclude == True or review.relevant == False or has_reconstruction == True:
+            if review.has_phi or review.exclude == True or review.relevant == False or review.has_reconstruction == True:
                 stop = True
                 msg = "Study %d has conflicting reviews, please address manually and continue pipeline. If an issue is found, remove the uid from studies_to_retrieve.txt.\n" % study.original_study_uid
                 overview.write(msg)
