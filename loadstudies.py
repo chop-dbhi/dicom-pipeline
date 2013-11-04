@@ -102,12 +102,14 @@ def scan_dicom_files(options):
                 rows = cursor.execute("select original from %s where study=?" % 
                                       table_map["0008,0050"],(pk,)).fetchall()
                 if rows == None:
-                    logger.error("Unable to find accession number for file %s in identity database.  File not be added to the database" %  filename)
+                    logger.error("Unable to find accession number for file %s in identity database.  File may not be added to the database" %  filename)
+                    details["accession"] = set()
                     continue
                     
                 accession = set([x[0] for x in rows if not x[0] == None and len(x[0].strip())]) 
                 if not len(accession):
-                    logger.error("Unable to find accession number for file %s in identity database.  File not be added to the database" %  filename)
+                    logger.error("Unable to find accession number for file %s in identity database.  File may not be added to the database" %  filename)
+                    details["accession"] = set()
                     continue
                     
                 details["accession"] = accession
@@ -164,7 +166,7 @@ def scan_dicom_files(options):
                     sys.exit()
                     
                 study_dates = [x[0].strip() for x in rows if not x[0] == None and len(x[0].strip())]
-                if not len(study_dates)
+                if not len(study_dates):
                     logger.error("Unable to find study date for alias %s in identity database" % study_date)
                     conn.close()
                     sys.exit()
