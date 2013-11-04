@@ -79,7 +79,7 @@ def scan_dicom_files(options):
                     sys.exit()
                 continue
 
-            details = cache.setdefault(study_uid,{'manufactured':False, "series":[], "num_series":0, "num_images":0, "accession":[]})
+            details = cache.setdefault(study_uid,{'manufactured':False, "series":[], "num_series":0, "num_images":0})
 
             if not details.has_key("orig_study_db_id"):
                 rows = cursor.execute("select id, original from studyinstanceuid where cleaned=?",(study_uid,)).fetchall()
@@ -98,23 +98,24 @@ def scan_dicom_files(options):
                 pk = details["orig_study_db_id"] 
 
             # Get the original accesion number
-            accession_cleaned = ds[0x8,0x50].value.strip()
-            rows = cursor.execute("select original from %s where cleaned=? and study=?" % 
-                                  table_map["0008,0050"],(accession_cleaned, pk)).fetchall()
-            try:
-                accession = rows[0][0]
-            except IndexError, e:
-                logger.error("Unable to find accession number for %s in identity database. Study in file %s may not be added to the database" % (accession_cleaned, filename))
-                continue 
-
-            if not accession in details["accession"]:
-                  details["accession"].append(accession)
+            if not details.has_key('accession'):
+                rows = cursor.execute("select original from %s where study=?" % 
+                                      table_map["0008,0050"],(pk,)).fetchall()
+                if rows == None:
+                    logger.error("Unable to find accession number for file %s in identity database.  File not be added to the database" %  filename)
+                    continue
+                    
+                accession = set([x[0] for x in rows if not x[0] == None and len(x[0].strip())]) 
+                if not len(accession):
+                    logger.error("Unable to find accession number for file %s in identity database.  File not be added to the database" %  filename)
+                    continue
+                    
+                details["accession"] = accession
 
             if not series in details["series"]:
                 details["series"].append(series)
                 details["num_series"] = len(details["series"])
             details["num_images"] += 1
-
 
             if not details.has_key("file"):
                 details["file"] = os.path.join(root,filename)
@@ -157,13 +158,17 @@ def scan_dicom_files(options):
             
             if not details.has_key("date"):
                 rows = cursor.execute("select original from studydate where study=?",(pk,)).fetchall()
-                study_date = None
-                try:
-                    study_date = rows[0][0]
-                except IndexError, e:
+                if rows == None:
                     logger.error("Unable to find study date for alias %s in identity database" % study_date)
                     conn.close()
                     sys.exit()
+                    
+                study_dates = [x[0].strip() for x in rows if not x[0] == None and len(x[0].strip())]
+                if not len(study_dates)
+                    logger.error("Unable to find study date for alias %s in identity database" % study_date)
+                    conn.close()
+                    sys.exit()
+                study_date = study_dates[0] # first one is good enough for our purposes
                 details["date"] = datetime.date(int(study_date[0:4]),int(study_date[4:6]), int(study_date[6:8]))
             
             # This code will change the DICOM file.  It replaces the enumerated 
