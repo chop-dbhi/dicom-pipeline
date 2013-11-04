@@ -144,7 +144,7 @@ def anonymize(input_file = None, output_file = None):
            os.path.sep.join([run_dir, "to_production"]),
            quarantine_dir = os.path.sep.join([run_dir, "quarantine"]),
            audit_file="identity.db",
-           allowed_modalities=modalities,
+           allowed_modalities=[x.strip() for x in modalities.split(",")],
            org_root = DICOM_ROOT,
            white_list_file = "dicom_limited_vocab.json",
            log_file=os.path.sep.join([run_dir, "anonymize_in_progress.txt"]),
