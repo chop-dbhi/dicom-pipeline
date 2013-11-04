@@ -135,7 +135,9 @@ def anonymize(input_file = None, output_file = None):
            allowed_modalities=modalities,
            org_root = DICOM_ROOT,
            white_list_file = "dicom_limited_vocab.json",
-           log_file=os.path.sep.join([run_dir, "anonymize_in_progress.txt"]))
+           log_file=os.path.sep.join([run_dir, "anonymize_in_progress.txt"]),
+           overlay = True,
+           profile = "clean")
 
     if result:
        shutil.move(os.path.sep.join([run_dir, "anonymize_in_progress.txt"]), 
