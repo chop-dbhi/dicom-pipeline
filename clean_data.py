@@ -1,6 +1,8 @@
 #!/usr/bin/env python
-# This script will descend into the data directory and remove given a date on the command line
-# Remove all the DICOM files from run_at_sssssssss directories, leaving only text log files.
+# Given a date string in 'mm/dd/yyyy' as command argument, this script will descend into the data directory
+# and delete the quarantine, no_encounter, from_staging and to_production folders from run directories older 
+# than the supplied date. It is used for cleaning out DICOM data files, but leaving the log files from each run.
+
 import dateutil.parser
 import datetime
 import os
@@ -24,7 +26,7 @@ for directory in os.listdir(data_dir):
     if match == None:
         continue
     dir_date = datetime.datetime.fromtimestamp(int(match.group(1)))
-    if dir_date > threshold_date:
+    if dir_date >= threshold_date:
         continue
     for dicom_file_dir in os.listdir(os.path.join(data_dir, directory)):
         if dicom_file_dir in DIRS_TO_DELETE:

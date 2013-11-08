@@ -17,7 +17,7 @@ The pipeline records information about each step using log files in a time stamp
 </center>
 
 ## Notice
-This pipeline is currently using a very new DICOM anonymizer (located at http://github.com/cbmi/dicom-anon). Please us with caution and report any issues.
+This pipeline is currently using a very new DICOM anonymizer (located at http://github.com/cbmi/dicom-anon). Please use with caution and report any issues.
 
 ## Architecture Assumptions
 This pipeline assumes you have two image archives (PACS), one where identified images are stored (staging) and one where the de-identified images will be stored (production). It is assumed that you are running the [django-dicom-review](https://github.com/cbmi/django-dicom-review) application so that it serves up to reviewers images from the identified staging archive, and this pipeline will be pushing to the production staging archive.
@@ -157,6 +157,14 @@ Some DICOM values can potentially contain PHI, but completely stripping them can
 }
 ```
 
+### Convenience scripts
+
+The `clean_data.py` script takes a date as a command line argument and deletes the `run_at` directories in your data directory that were created earlier than that day. This can be used to save space by cleaning out old DICOM files that are no longer needed. The text log files will remain.
+
+There are various scripts in the [dicom-tools](https://github.com/cbmi/dicom-tools) repository (which is checked out as a submodule of this repo). See the README in that repository. The two most directly useful to DICOM anonymization are:
+
+1. filter_dicom.py - Selectively move certain DICOM files by specifying study or series id to a different directory. This can be used to remove certain files before pushing to production.
+1. print_summary.py - Print out all the unique study/series descriptions and patient names for all DICOM files in a directory.
 
 
 
