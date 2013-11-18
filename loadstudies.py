@@ -292,6 +292,7 @@ def add_studies(options, cache):
 
 
 def move_failed_studies(valid, directory, faildir):
+    now = datetime.datetime.now() 
     for root, dirs, files in os.walk(directory):  
        for filename in files:
            try:
@@ -305,7 +306,16 @@ def move_failed_studies(valid, directory, faildir):
                   shutil.move(os.path.join(root,filename), faildir)
                except IOError, e1:
                   print "Unable to move file %s with study_uid %s. Trying to move because it failed to be reconciled with a patient or an error occurred while reading the file." % (filename, study_uid)
-
+               if study_uid != "<unable to read>":
+                   try:
+                       rs = RadiologyStudy.objects.get(original_study_uid = cache[study_uid]["orig_study_uid"]) 
+                   except ObjectDoesNotExist:
+                       logging.error("Tried to mark study %s as error, but unable to find study object" % cache[study_uid]["orig_study_uid"])
+                       continue
+                   rs.processing_error = True
+                   rs.processing_error_date = now
+                   rs.processing_error_msg = "Unable to find encounter in EHR"
+                   rs.save()
 
 def main():
     parser = OptionParser()
@@ -351,7 +361,7 @@ def main():
 
     valid = add_studies(options, cache)
     if not options.dryrun:
-        move_failed_studies(valid, options.directory, options.faildir)
+        move_failed_studies(valid, options.directory, options.faildir, cache)
     
     logger.info("Completed.")
     

@@ -83,7 +83,7 @@ def get_reviewed_studies(input_file, output_file):
         radiologystudyreview__relevant = True,
         radiologystudyreview__has_reconstruction = False,
         exclude = False,
-        image_published = False).exclude(radiologystudyreview__exclude = True).distinct()[0:limit]
+        image_published = False).exclude(radiologystudyreview__exclude = True).exclude(processing_error = True).distinct()[0:limit]
     
     # Go through and for each study, make sure we do not have any conflicting reviews
     stop = False    
@@ -171,7 +171,7 @@ def check_patient_protocol(input_file = None, output_file = None):
         radiologystudyreview__relevant = True,
         radiologystudyreview__has_reconstruction = False,
         exclude = False,
-        radiologystudyreview__has_protocol_series = True).exclude(radiologystudyreview__exclude = True).distinct()
+        radiologystudyreview__has_protocol_series = True).distinct()
 
     reviewed_protocol_studies = set([x.original_study_uid for x in protocol_studies])
 
@@ -180,7 +180,7 @@ def check_patient_protocol(input_file = None, output_file = None):
     for root, dirs, files in os.walk(quarantine_dir):
         for filename in files:
             try:
-                ds = dicom.read_file(os.path.join(root,filename))
+                ds = dicom.read_file(os.path.join(root, filename))
             except IOError:
                 sys.stderr.write("Unable to read %s" % os.path.join(root, filename))
                 continue
