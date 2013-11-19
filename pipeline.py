@@ -67,6 +67,15 @@ if __name__ == "__main__":
             if last:
                 run_dir = os.path.sep.join(["data", "run_at_%d" % last])
 
+# Reads the file created in get reviewed studies and returns a list of the study uid
+def get_study_list():
+    file_name = os.path.sep.join([run_dir, "studies_to_retrieve.txt"])
+    studies_file = open(file_name, "r")
+    studies = studies_file.read().splitlines()
+    studies_file.close()
+    studies = [line.strip() for line in studies]
+    return studies
+
 def setup_data_dir():
     global overview 
     if not os.path.exists(run_dir):
@@ -161,10 +170,7 @@ def anonymize(input_file = None, output_file = None):
 @files(os.path.sep.join([run_dir, "anonymize_output.txt"]), os.path.sep.join([run_dir, "missing_protocol_studies.txt"]))
 @follows(anonymize)
 def check_patient_protocol(input_file = None, output_file = None):
-    file_name = os.path.sep.join([run_dir, "studies_to_retrieve.txt"])
-    studies_file = open(file_name, "r")
-    studies = studies_file.read().splitlines()
-    studies_file.close()
+    studies = get_study_list()
 
     protocol_studies = RadiologyStudy.objects.filter(original_study_uid__in=studies,
         radiologystudyreview__has_phi = False,
@@ -236,6 +242,7 @@ def push_to_production(input_file = None, output_file = None):
 @files(os.path.sep.join([run_dir, "push_output.txt"]), os.path.sep.join([run_dir, "done.txt"]))
 @follows(push_to_production)
 def set_as_pushed(input_file=None, output_file=None):
+    now = datetime.datetime.now()
     production_dir = os.path.sep.join([run_dir, "to_production"])
     studies = set()
     for root, dirs, files in os.walk(production_dir):
@@ -255,15 +262,47 @@ def set_as_pushed(input_file=None, output_file=None):
     conn = sqlite3.connect('identity.db')
     c = conn.cursor()
 
+    pushed_studies = set()
     for study in studies:
         result = c.execute(GET_ORIGINAL_QUERY, (study,))
-        original = result.fetchall()[0][0]
-        rs = RadiologyStudy.objects.get(original_study_uid=original)
+        try:
+            # We need to get the original id so we can determine if there were any errors are mark the studies
+            original = result.fetchall()[0][0]
+            pushed_studies.add(original.strip())
+        except:
+            sys.stderr.write("Unable to get original study_uid for %s while trying to reconcile pushed studies with errored studies." % study)
+            overview.write("Unable to get original study_uid for %s while trying to reconcile pushed studies with errored studies.\n" % study)
+            continue
+
+        rs = RadiologyStudy.objects.get(study_uid=study)
         rs.image_published = True
         rs.save()
 
     conn.close()
     overview.write("%d studies marked as pushed\n" % len(studies))
+
+    # Mark any studies that were not pushed as processing_error in the database so we
+    # don't keep pulling them over and over
+    requested_studies = set(get_study_list())
+
+    # Subtract studies we requested from studies we pushed
+    failed_studies = request_studies - pushed_studies
+    for study_uid in failed_studies:
+        try:
+            rs = RadiologyStudy.objects.get(original_study_uid = study_uid) 
+        except ObjectDoesNotExist:
+            sys.stderr.write("Tried to mark study %s as error, but unable to find study object" % study_uid)
+            continue
+        # If it was marked as pushed, it was successfully pushed. 
+        # If it is already marked as error, we have a more specific error message for it
+        # provided by another part of the pipeline
+        if not rs.processing_error and not rs.image_published:
+            rs.processing_error = True
+            rs.processing_error_date = now
+            rs.processing_error_msg = "Error during anonymization. Most likely this study was never found in the source PACS"
+            rs.save()
+    if len(failed_studies) > 0:
+         overview.write("%d studies were not pushed:\n %s\n" % (len(failed_studies), failed_studies))
 
     f = open(os.path.sep.join([run_dir, "done.txt"]), "w")
     now = datetime.datetime.now()

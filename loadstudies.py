@@ -291,7 +291,7 @@ def add_studies(options, cache):
     
 
 
-def move_failed_studies(valid, directory, faildir):
+def move_failed_studies(valid, directory, faildir, cache):
     now = datetime.datetime.now() 
     for root, dirs, files in os.walk(directory):  
        for filename in files:
