@@ -286,7 +286,7 @@ def set_as_pushed(input_file=None, output_file=None):
     requested_studies = set(get_study_list())
 
     # Subtract studies we requested from studies we pushed
-    failed_studies = request_studies - pushed_studies
+    failed_studies = requested_studies - pushed_studies
     for study_uid in failed_studies:
         try:
             rs = RadiologyStudy.objects.get(original_study_uid = study_uid) 
