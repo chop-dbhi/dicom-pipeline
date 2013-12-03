@@ -125,9 +125,9 @@ def scan_dicom_files(options):
             if not details.has_key("sop_class_uid"):
                 details["sop_class_uid"] = ds[0x8,0x16].value.strip()
                 try:
-                    details["modality"] = sop_class[details["sop_class_uid"]]
+                    details["modality"] = ds[0x8,0x60].value.strip()
                 except KeyError,e:
-                    logger.error("Unable to determine modality type of sop class %s" % details["sop_class_uid"])
+                    logger.error("No modality found for file %s" % os.path.join(root, filename))
                     sys.exit()
                 
             if not details.has_key("patient_alias"):
