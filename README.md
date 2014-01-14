@@ -89,7 +89,7 @@ The following files will also be created:
 
 1. push_output.txt - Output from the push to production process
 
-1. found\_protocol_studies.txt - This is a list of all the studies found to have a series called Patient Protocol (which in our expereince is never something you want pushed to production)
+1. found\_protocol_studies.txt - This is a list of all the studies found to have a series called Patient Protocol (which in our experience is never something you want pushed to production)
 
 1. missing\_protocol_studies.txt - If the reviewer marked a study as containing a protocol study in the review app, but it was not found during anonymization, this file will list the study uid for further review.
 
