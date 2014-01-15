@@ -84,6 +84,8 @@ def setup_data_dir():
     overview = open(os.path.sep.join([run_dir, "overview.txt"]), "a")
     now = datetime.datetime.now()
     overview.write("Starting at %s\n" % now.strftime("%Y-%m-%d %H:%M"))
+    overview.flush()
+    os.fsync(overview.fileno())
 
 @follows(setup_data_dir)
 @files(None, os.path.sep.join([run_dir, "studies_to_retrieve.txt"]))
@@ -102,6 +104,8 @@ def get_reviewed_studies(input_file, output_file):
                 stop = True
                 msg = "Study %d has conflicting reviews, please address manually and continue pipeline. If an issue is found, remove the uid from studies_to_retrieve.txt.\n" % study.original_study_uid
                 overview.write(msg)
+                overview.flush()
+                os.fsync(overview.fileno())
                 print msg,
 
     comments = open(os.path.sep.join([run_dir, "comments.txt"]), "w")
@@ -116,7 +120,9 @@ def get_reviewed_studies(input_file, output_file):
         f.write(study.original_study_uid+"\n")
     f.close()
     overview.write("%d valid reviewed studies. Please review comments.txt\n" % len(studies))
-    
+    overview.flush()
+    os.fsync(overview.fileno())
+
     if stop:
         overview.close()
         sys.exit()
@@ -139,6 +145,8 @@ def request_dicom_files(input_file, output_file = None):
      f.write(results)
      f.close()
      overview.write("Received %d files containing %d studies\n" % dicom_count(os.path.sep.join([run_dir, "from_staging"])))
+     overview.flush()
+     os.fsync(overview.fileno())
 
 @follows(request_dicom_files)
 def stop_dicom_server():
@@ -165,6 +173,7 @@ def anonymize(input_file = None, output_file = None):
            os.path.sep.join([run_dir, "anonymize_output.txt"]))
     else:
        overview.write("Error during anonymization, see anonymize_in_progress.text\n")
+       overview.close()
        sys.exit()
 
 @files(os.path.sep.join([run_dir, "anonymize_output.txt"]), os.path.sep.join([run_dir, "missing_protocol_studies.txt"]))
@@ -199,6 +208,8 @@ def check_patient_protocol(input_file = None, output_file = None):
 
     overview.write("%d studies marked as having a protocol series, %d studies found with protocol series during anonymization.\n" % (len(reviewed_protocol_studies), len(found_protocol_studies)))
     overview.write("%d studies marked as having a protocol series but not found, see 'missing_protocol_studies.txt'.\n" % len(marked_but_not_found))
+    overview.flush()
+    os.fsync(overview.fileno())
 
     f = open(os.path.sep.join([run_dir, "reviewed_protocol_studies.txt"]), "w")
     for study in reviewed_protocol_studies:
@@ -238,6 +249,9 @@ def push_to_production(input_file = None, output_file = None):
     f.close()
     now = datetime.datetime.now()
     overview.write("Push completed at %s\n" % now.strftime("%Y-%m-%d %H:%M"))
+    overview.flush()
+    os.fsync(overview.fileno())
+
 
 @files(os.path.sep.join([run_dir, "push_output.txt"]), os.path.sep.join([run_dir, "done.txt"]))
 @follows(push_to_production)
@@ -272,6 +286,8 @@ def set_as_pushed(input_file=None, output_file=None):
         except:
             sys.stderr.write("Unable to get original study_uid for %s while trying to reconcile pushed studies with errored studies." % study)
             overview.write("Unable to get original study_uid for %s while trying to reconcile pushed studies with errored studies.\n" % study)
+            overview.flush()
+            os.fsync(overview.fileno())
             continue
 
         rs = RadiologyStudy.objects.get(study_uid=study)
@@ -280,7 +296,8 @@ def set_as_pushed(input_file=None, output_file=None):
 
     conn.close()
     overview.write("%d studies marked as pushed\n" % len(studies))
-
+    overview.flush()
+    os.fsync(overview.fileno())
     # Mark any studies that were not pushed as processing_error in the database so we
     # don't keep pulling them over and over
     requested_studies = set(get_study_list())
